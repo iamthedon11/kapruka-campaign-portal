@@ -316,6 +316,49 @@
       .day-number { font-size: 12px; }
       .slot-preview { font-size: 8px; }
     }
+    /* Allow multiple posts per day */
+.calendar-day {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.posts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 90px;
+  margin-top: 8px;
+}
+
+.calendar-post {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-post:hover {
+  transform: scale(1.03);
+}
+
+.calendar-post.seasonal {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #5e3a8e;
+  font-weight: 700;
+  border: 2px solid #5e3a8e;
+}
+
+.calendar-post.daily {
+  background: linear-gradient(135deg, #E3F2FD, #90CAF9);
+  color: #1976D2;
+  border: 2px solid #64B5F6;
+}
   </style>
 </head>
 <body>
