@@ -165,6 +165,7 @@ async function getActiveWindow() {
   
   return windows[0];
 }
+
 async function getProductDashboard() {
   try {
     const window = await getActiveWindow();
@@ -356,6 +357,7 @@ async function deleteDepartment(row) {
   await supabaseQuery(`department_config?id=eq.${row}`, 'DELETE');
   return { success: true };
 }
+
 // ═══════════════════════════════════════════════════════════════
 // CONTENT CALENDAR API
 // ═══════════════════════════════════════════════════════════════
@@ -444,7 +446,9 @@ async function getCategorySlotsForDate(date) {
   }
 }
 
-// Submit content booking
+// ═══════════════════════════════════════════════════════════════
+// FIXED: Submit content booking (Issue #2)
+// ═══════════════════════════════════════════════════════════════
 async function submitContentBooking(bookingData) {
   try {
     // Check if slot is already booked
@@ -452,24 +456,34 @@ async function submitContentBooking(bookingData) {
       `content_calendar?date=eq.${bookingData.date}&slot_number=eq.${bookingData.slotNumber}`
     );
 
-    if (existing.length > 0 && existing[0].status !== 'Rejected') {
+    const alreadyBooked = existing.some(b => b.status === 'Pending' || b.status === 'Approved');
+    
+    if (alreadyBooked) {
       throw new Error('This slot is already booked');
     }
 
+    // Get theme for this date
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${bookingData.date}&end_date=gte.${bookingData.date}`
+    );
+    
+    const themeName = themes.length > 0 ? themes[0].theme_name : 'Daily Post';
+
     const booking = {
       date: bookingData.date,
-      slot_number: bookingData.slotNumber,
+      slot_number: parseInt(bookingData.slotNumber),
       category: bookingData.category,
       product_code: bookingData.productCode,
       product_link: bookingData.productLink || '',
       status: 'Pending',
       submitted_by: bookingData.submittedBy || 'User',
-      theme: bookingData.theme || 'Daily Post'
+      theme: themeName
     };
 
     const result = await supabaseQuery('content_calendar', 'POST', booking);
     return { success: true, bookingId: result[0].id };
   } catch (error) {
+    console.error('submitContentBooking error:', error);
     throw error;
   }
 }
@@ -610,12 +624,35 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay) {
   }
 }
 
-// Delete theme (admin)
+// ═══════════════════════════════════════════════════════════════
+// FIXED: Delete theme with cascade (Issue #1)
+// ═══════════════════════════════════════════════════════════════
 async function deleteTheme(themeId) {
   try {
+    // Get theme details first
+    const themes = await supabaseQuery(`theme_config?id=eq.${themeId}`);
+    if (themes.length === 0) throw new Error('Theme not found');
+    
+    const theme = themes[0];
+    
+    // Delete associated category slots for this date range
+    const slots = await supabaseQuery(
+      `category_slots?date=gte.${theme.start_date}&date=lte.${theme.end_date}`
+    );
+    
+    if (slots.length > 0) {
+      await supabaseQuery(
+        `category_slots?date=gte.${theme.start_date}&date=lte.${theme.end_date}`,
+        'DELETE'
+      );
+    }
+    
+    // Delete the theme
     await supabaseQuery(`theme_config?id=eq.${themeId}`, 'DELETE');
-    return { success: true };
+    
+    return { success: true, slotsDeleted: slots.length };
   } catch (error) {
+    console.error('deleteTheme error:', error);
     throw error;
   }
 }
