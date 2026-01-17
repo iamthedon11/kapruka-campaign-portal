@@ -6,9 +6,6 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 // Valid status options (only 3 now)
 const VALID_STATUSES = ['Working', 'Live', 'Rejected'];
 
@@ -146,12 +143,13 @@ async function getActiveWindow() {
   const windows = await supabaseQuery('submission_windows?status=eq.Active&order=created_at.desc&limit=1');
   
   if (windows.length === 0) {
+    // Create CURRENT 7-day window (started 3 days ago, ends in 4 days)
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 3);
+    startDate.setDate(today.getDate() - 3); // Started 3 days ago
     
     const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 4);
+    endDate.setDate(today.getDate() + 4); // Ends in 4 days (total 7 days)
     
     const newWindow = {
       window_id: generateId('WIN'),
@@ -167,7 +165,6 @@ async function getActiveWindow() {
   
   return windows[0];
 }
-
 async function getProductDashboard() {
   try {
     const window = await getActiveWindow();
@@ -359,7 +356,6 @@ async function deleteDepartment(row) {
   await supabaseQuery(`department_config?id=eq.${row}`, 'DELETE');
   return { success: true };
 }
-
 // ═══════════════════════════════════════════════════════════════
 // CONTENT CALENDAR API
 // ═══════════════════════════════════════════════════════════════
@@ -395,73 +391,84 @@ async function getCalendarData(month, year) {
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
-    const { data: themes, error: themesError } = await supabase
-      .from('content_themes')
-      .select('*')
-      .lte('start_date', endDate)
-      .gte('end_date', startDate);
+    // Get themes for this month
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+    );
 
-    if (themesError) throw themesError;
+    // Get category slots for this month
+    const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+    const categorySlots = await supabaseQuery(
+      `category_slots?month_year=eq.${monthYear}`
+    );
 
-    const { data: categorySlots, error: slotsError } = await supabase
-      .from('category_slots')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (slotsError) throw slotsError;
-
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('content_bookings')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    if (bookingsError) throw bookingsError;
+    // Get bookings for this month
+    const bookings = await supabaseQuery(
+      `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
 
     return {
-      themes: themes || [],
-      categorySlots: categorySlots || [],
-      bookings: bookings || []
+      themes: themes,
+      categorySlots: categorySlots,
+      bookings: bookings
     };
   } catch (error) {
     console.error('getCalendarData error:', error);
-    throw error;
+    return { themes: [], categorySlots: [], bookings: [] };
+  }
+}
+
+// Get theme for a specific date
+async function getThemeForDate(date) {
+  try {
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${date}&end_date=gte.${date}`
+    );
+    return themes.length > 0 ? themes[0] : null;
+  } catch (error) {
+    console.error('getThemeForDate error:', error);
+    return null;
+  }
+}
+
+// Get category slots for a specific date
+async function getCategorySlotsForDate(date) {
+  try {
+    const slots = await supabaseQuery(
+      `category_slots?date=eq.${date}&order=slot_number.asc`
+    );
+    return slots;
+  } catch (error) {
+    console.error('getCategorySlotsForDate error:', error);
+    return [];
   }
 }
 
 // Submit content booking
 async function submitContentBooking(bookingData) {
   try {
-    const { data: existing, error: checkError } = await supabase
-      .from('content_bookings')
-      .select('*')
-      .eq('date', bookingData.date)
-      .eq('slot_number', bookingData.slotNumber);
+    // Check if slot is already booked
+    const existing = await supabaseQuery(
+      `content_calendar?date=eq.${bookingData.date}&slot_number=eq.${bookingData.slotNumber}`
+    );
 
-    if (checkError) throw checkError;
-
-    if (existing && existing.length > 0 && existing[0].status !== 'Rejected') {
+    if (existing.length > 0 && existing[0].status !== 'Rejected') {
       throw new Error('This slot is already booked');
     }
 
-    const { data, error } = await supabase
-      .from('content_bookings')
-      .insert([{
-        date: bookingData.date,
-        slot_number: bookingData.slotNumber,
-        category: bookingData.category,
-        product_code: bookingData.productCode,
-        product_link: bookingData.productLink || '',
-        status: 'Pending',
-        submitted_by: bookingData.submittedBy || 'User',
-        created_at: new Date().toISOString()
-      }])
-      .select();
+    const booking = {
+      date: bookingData.date,
+      slot_number: bookingData.slotNumber,
+      category: bookingData.category,
+      product_code: bookingData.productCode,
+      product_link: bookingData.productLink || '',
+      status: 'Pending',
+      submitted_by: bookingData.submittedBy || 'User',
+      theme: bookingData.theme || 'Daily Post'
+    };
 
-    if (error) throw error;
-
-    return { success: true, bookingId: data[0].id };
+    const result = await supabaseQuery('content_calendar', 'POST', booking);
+    return { success: true, bookingId: result[0].id };
   } catch (error) {
     throw error;
   }
@@ -470,15 +477,8 @@ async function submitContentBooking(bookingData) {
 // Get all content bookings (for admin)
 async function getAllContentBookings() {
   try {
-    const { data, error } = await supabase
-      .from('content_bookings')
-      .select('*')
-      .order('date', { ascending: false })
-      .order('slot_number', { ascending: true });
-
-    if (error) throw error;
-
-    return data.map(b => ({
+    const bookings = await supabaseQuery('content_calendar?order=date.desc,slot_number.asc');
+    return bookings.map(b => ({
       id: b.id,
       date: b.date,
       slotNumber: b.slot_number,
@@ -487,6 +487,9 @@ async function getAllContentBookings() {
       productLink: b.product_link,
       status: b.status,
       submittedBy: b.submitted_by,
+      theme: b.theme,
+      scheduleDate: b.schedule_date,
+      goLiveDate: b.go_live_date,
       reviewer: b.reviewer,
       rejectionReason: b.rejection_reason,
       createdAt: b.created_at
@@ -506,17 +509,13 @@ async function updateContentBooking(id, updateData) {
       updated_at: new Date().toISOString()
     };
 
-    if (updateData.status === 'Rejected') {
+    if (updateData.status === 'Approved') {
+      data.go_live_date = updateData.goLiveDate || null;
+    } else if (updateData.status === 'Rejected') {
       data.rejection_reason = updateData.rejectionReason || '';
     }
 
-    const { error } = await supabase
-      .from('content_bookings')
-      .update(data)
-      .eq('id', id);
-
-    if (error) throw error;
-
+    await supabaseQuery(`content_calendar?id=eq.${id}`, 'PATCH', data);
     return { success: true };
   } catch (error) {
     throw error;
@@ -526,13 +525,8 @@ async function updateContentBooking(id, updateData) {
 // Get all themes (for admin)
 async function getAllThemes() {
   try {
-    const { data, error } = await supabase
-      .from('content_themes')
-      .select('*')
-      .order('start_date', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    const themes = await supabaseQuery('theme_config?order=start_date.desc');
+    return themes;
   } catch (error) {
     console.error('getAllThemes error:', error);
     return [];
@@ -546,89 +540,70 @@ async function addTheme(themeData) {
       theme_name: themeData.themeName,
       start_date: themeData.startDate,
       end_date: themeData.endDate,
-      is_seasonal: themeData.isSeasonal || false,
-      created_at: new Date().toISOString()
+      slots_per_day: parseInt(themeData.slotsPerDay),
+      theme_color: themeData.themeColor || '#422B73',
+      is_seasonal: themeData.isSeasonal || false
     };
 
-    const { data, error } = await supabase
-      .from('content_themes')
-      .insert([theme])
-      .select();
+    const result = await supabaseQuery('theme_config', 'POST', theme);
 
-    if (error) throw error;
+    // If it's a Daily Post theme, generate category slots
+    if (!themeData.isSeasonal) {
+      await generateCategorySlots(themeData.startDate, themeData.endDate, themeData.slotsPerDay);
+    }
 
-    // Generate category slots for the date range
-    const categories = themeData.categories || CATEGORIES.slice(0, 3);
-    await generateCategorySlots(data[0].id, themeData.startDate, themeData.endDate, categories);
-
-    return { success: true, themeId: data[0].id };
+    return { success: true, themeId: result[0].id };
   } catch (error) {
     throw error;
   }
 }
 
-// Generate category slots for a date range (FIXED VERSION)
-async function generateCategorySlots(themeId, startDate, endDate, categories) {
+// Generate category slots for a date range (admin)
+async function generateCategorySlots(startDate, endDate, slotsPerDay) {
   try {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const slots = [];
-    
-    // Generate slots for each day
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dateStr = date.toISOString().split('T')[0];
-      
-      categories.forEach((category, index) => {
-        slots.push({
-          date: dateStr,
-          slot_number: index + 1,
-          category: category
-        });
-      });
-    }
 
-    console.log('Generated slots to insert:', slots.length);
+    // Shuffle categories for variety
+    const shuffledCategories = [...CATEGORIES].sort(() => Math.random() - 0.5);
+    let categoryIndex = 0;
 
-    // STEP 1: Delete existing slots for this date range
-    console.log('Deleting old slots from', startDate, 'to', endDate);
-    
-    const { error: deleteError } = await supabase
-      .from('category_slots')
-      .delete()
-      .gte('date', startDate)
-      .lte('date', endDate);
+    let currentDate = new Date(start);
+    let weekNumber = Math.floor((currentDate.getDate() - 1) / 7) + 1;
 
-    if (deleteError) {
-      console.error('Delete error:', deleteError);
-      console.warn('Could not delete old slots, will try insert anyway');
-    } else {
-      console.log('Old slots deleted successfully');
-    }
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const monthYear = dateStr.substring(0, 7);
 
-    // STEP 2: Insert new slots in batches
-    const batchSize = 50;
-    let insertedCount = 0;
-
-    for (let i = 0; i < slots.length; i += batchSize) {
-      const batch = slots.slice(i, i + batchSize);
-      
-      const { data, error } = await supabase
-        .from('category_slots')
-        .insert(batch)
-        .select();
-
-      if (error) {
-        console.error(`Batch ${Math.floor(i / batchSize) + 1} error:`, error);
-        throw error;
+      // Reshuffle every week (7 days)
+      if (currentDate.getDay() === 0 && currentDate > start) {
+        shuffledCategories.sort(() => Math.random() - 0.5);
+        categoryIndex = 0;
+        weekNumber++;
       }
 
-      insertedCount += data?.length || 0;
-      console.log(`Batch ${Math.floor(i / batchSize) + 1}: ${data?.length || 0} slots inserted`);
+      // Create slots for this day
+      for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+        slots.push({
+          date: dateStr,
+          slot_number: slotNum,
+          category: shuffledCategories[categoryIndex % shuffledCategories.length],
+          week_number: weekNumber,
+          month_year: monthYear
+        });
+        categoryIndex++;
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    console.log('Total slots created:', insertedCount);
-    return { success: true, count: insertedCount };
-    
+    // Batch insert
+    if (slots.length > 0) {
+      await supabaseQuery('category_slots', 'POST', slots);
+    }
+
+    return { success: true, slotsCreated: slots.length };
   } catch (error) {
     console.error('generateCategorySlots error:', error);
     throw error;
@@ -638,12 +613,37 @@ async function generateCategorySlots(themeId, startDate, endDate, categories) {
 // Delete theme (admin)
 async function deleteTheme(themeId) {
   try {
-    const { error } = await supabase
-      .from('content_themes')
-      .delete()
-      .eq('id', themeId);
+    await supabaseQuery(`theme_config?id=eq.${themeId}`, 'DELETE');
+    return { success: true };
+  } catch (error) {
+    throw error;
+  }
+}
 
-    if (error) throw error;
+// Refresh category slots for a month (admin - for monthly refresh)
+async function refreshCategorySlotsForMonth(month, year) {
+  try {
+    const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+    
+    // Delete existing slots for this month
+    await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
+
+    // Get Daily Post themes for this month
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}&is_seasonal=eq.false`
+    );
+
+    // Regenerate slots for each Daily Post theme
+    for (const theme of themes) {
+      const themeStart = theme.start_date > startDate ? theme.start_date : startDate;
+      const themeEnd = theme.end_date < endDate ? theme.end_date : endDate;
+      await generateCategorySlots(themeStart, themeEnd, theme.slots_per_day);
+    }
+
     return { success: true };
   } catch (error) {
     throw error;
