@@ -143,15 +143,18 @@ async function getActiveWindow() {
   const windows = await supabaseQuery('submission_windows?status=eq.Active&order=created_at.desc&limit=1');
   
   if (windows.length === 0) {
-    // Create new window if none exists
+    // Create CURRENT 7-day window (started 3 days ago, ends in 4 days)
     const today = new Date();
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 3); // Started 3 days ago
+    
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 4); // Ends in 4 days (total 7 days)
     
     const newWindow = {
       window_id: generateId('WIN'),
-      start_date: today.toISOString().split('T')[0],
-      end_date: nextWeek.toISOString().split('T')[0],
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
       target_suggestions: 30,
       status: 'Active'
     };
@@ -162,7 +165,6 @@ async function getActiveWindow() {
   
   return windows[0];
 }
-
 async function getProductDashboard() {
   try {
     const window = await getActiveWindow();
