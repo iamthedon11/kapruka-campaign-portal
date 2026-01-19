@@ -688,20 +688,30 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT PERFORMANCE API
+// PRODUCT PERFORMANCE API (ALTERNATIVE APPROACH)
 // ═══════════════════════════════════════════════════════════════
 
 async function searchProductPerformance(keyword, startDate = null, endDate = null) {
   try {
-    let dateFilter = '';
-    if (startDate && endDate) {
-      dateFilter = `&date=gte.${startDate}&date=lte.${endDate}`;
+    // Build query parts
+    let query = 'meta_ads_performance?';
+    
+    // Add search filter
+    const searchFilter = `or=(campaign_name.ilike.*${keyword}*,adset_name.ilike.*${keyword}*,ad_name.ilike.*${keyword}*)`;
+    query += searchFilter;
+    
+    // Add date filters if provided
+    if (startDate) {
+      query += `&date=gte.${startDate}`;
     }
-
-    // Search across all levels
-    const results = await supabaseQuery(
-      `meta_ads_performance?or=(campaign_name.ilike.%${encodeURIComponent(keyword)}%,adset_name.ilike.%${encodeURIComponent(keyword)}%,ad_name.ilike.%${encodeURIComponent(keyword)}%)${dateFilter}&order=date.desc`
-    );
+    if (endDate) {
+      query += `&date=lte.${endDate}`;
+    }
+    
+    // Add ordering
+    query += '&order=date.desc';
+    
+    const results = await supabaseQuery(query);
 
     if (results.length === 0) {
       return { level: 'none', data: [], aggregated: [] };
@@ -801,7 +811,7 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
 
 async function getDateRangeOptions() {
   try {
-    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc.nullslast&limit=1000');
+    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc&limit=1000');
     
     if (results.length === 0) {
       return { minDate: null, maxDate: null };
