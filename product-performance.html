@@ -420,11 +420,9 @@
     }
 
     function formatCurrency(value) {
-      // Convert INR to USD (approximate rate: 1 USD = 83 INR)
-      const usd = parseFloat(value) / 83;
-      return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
+  // Display as dollars without conversion (LKR amounts shown as $)
+  return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
     function formatNumber(value) {
       return parseInt(value).toLocaleString('en-US');
     }
