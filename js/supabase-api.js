@@ -842,3 +842,112 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     throw error;
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// HOT PRODUCTS API
+// ═══════════════════════════════════════════════════════════════
+
+async function getHotProductsByCategory(category) {
+  try {
+    const products = await supabaseQuery(
+      `hot_products?category=eq.${encodeURIComponent(category)}&order=created_at.desc`
+    );
+    return products;
+  } catch (error) {
+    console.error('getHotProductsByCategory error:', error);
+    throw error;
+  }
+}
+
+async function getAllHotProducts() {
+  try {
+    const products = await supabaseQuery('hot_products?order=created_at.desc');
+    return products;
+  } catch (error) {
+    console.error('getAllHotProducts error:', error);
+    throw error;
+  }
+}
+
+async function addHotProduct(productData) {
+  try {
+    const data = {
+      category: productData.category,
+      product_link: productData.productLink,
+      sales_count: parseInt(productData.salesCount) || 0,
+      listed: false,
+      kapruka_link: null
+    };
+
+    const result = await supabaseQuery('hot_products', 'POST', data);
+    return { success: true, product: result[0] };
+  } catch (error) {
+    console.error('addHotProduct error:', error);
+    throw error;
+  }
+}
+
+async function updateHotProduct(productId, updateData) {
+  try {
+    const data = {};
+
+    if (updateData.listed !== undefined) {
+      data.listed = updateData.listed;
+    }
+
+    if (updateData.kapruka_link !== undefined) {
+      data.kapruka_link = updateData.kapruka_link || null;
+    }
+
+    if (updateData.salesCount !== undefined) {
+      data.sales_count = parseInt(updateData.salesCount) || 0;
+    }
+
+    await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
+    return { success: true };
+  } catch (error) {
+    console.error('updateHotProduct error:', error);
+    throw error;
+  }
+}
+
+async function deleteHotProduct(productId) {
+  try {
+    await supabaseQuery(`hot_products?id=eq.${productId}`, 'DELETE');
+    return { success: true };
+  } catch (error) {
+    console.error('deleteHotProduct error:', error);
+    throw error;
+  }
+}
+
+async function getHotProductsStats() {
+  try {
+    const products = await supabaseQuery('hot_products');
+
+    const stats = {
+      totalProducts: products.length,
+      listedProducts: products.filter(p => p.listed).length,
+      byCategory: {}
+    };
+
+    products.forEach(p => {
+      if (!stats.byCategory[p.category]) {
+        stats.byCategory[p.category] = {
+          total: 0,
+          listed: 0,
+          totalSales: 0
+        };
+      }
+      stats.byCategory[p.category].total++;
+      if (p.listed) stats.byCategory[p.category].listed++;
+      stats.byCategory[p.category].totalSales += (p.sales_count || 0);
+    });
+
+    return stats;
+  } catch (error) {
+    console.error('getHotProductsStats error:', error);
+    throw error;
+  }
+}
+
