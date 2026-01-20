@@ -140,48 +140,90 @@
       border: 3px solid transparent;
       transition: all 0.3s;
       font-weight: 600;
+      padding: 8px;
     }
-    .slot-num { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .slot-label { font-size: 11px; text-transform: uppercase; }
+    .slot-num { 
+      font-size: 24px; 
+      font-weight: 800; 
+      margin-bottom: 4px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .slot-label { 
+      font-size: 10px; 
+      text-transform: uppercase; 
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* AVAILABLE SLOTS - Bright Green with Dark Text */
     .slot.available {
-      background: linear-gradient(135deg, #90EE90, #98FB98);
-      color: #2E8B57;
-      border-color: #2E8B57;
+      background: linear-gradient(135deg, #B8F2B8, #90EE90);
+      color: #1B5E20;
+      border-color: #2E7D32;
     }
     .slot.available:hover {
       transform: translateY(-8px) scale(1.05);
       box-shadow: 0 12px 35px rgba(46,139,87,0.4);
+      background: linear-gradient(135deg, #A5F0A5, #7FE67F);
     }
+
+    /* WORKING SLOTS - Yellow/Orange with Dark Text */
     .slot.working {
-      background: linear-gradient(135deg, #FFCC00, #CCAA00);
-      color: #995500;
-      border-color: #995500;
+      background: linear-gradient(135deg, #FFE599, #FFD966);
+      color: #BF6000;
+      border-color: #E67E00;
+    }
+    .slot.working .slot-num {
+      color: #993D00;
     }
     .slot.working:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(186,142,35,0.4);
+      box-shadow: 0 8px 25px rgba(255,193,7,0.4);
     }
+
+    /* LIVE SLOTS - Blue with White Text */
     .slot.live {
-      background: linear-gradient(135deg, #4CAF50, #66BB6A);
+      background: linear-gradient(135deg, #1976D2, #1565C0);
       color: white;
-      border-color: #2E7D32;
+      border-color: #0D47A1;
+    }
+    .slot.live .slot-num {
+      color: white;
+    }
+    .slot.live .slot-label {
+      color: #E3F2FD;
+    }
+    .slot.live .slot-details {
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.15);
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
     }
     .slot.live:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(76,175,80,0.5);
+      box-shadow: 0 8px 25px rgba(25,118,210,0.5);
     }
+
+    /* SELECTED SLOT - Gold with Dark Purple Text */
     .slot.selected {
-      background: linear-gradient(135deg, #FFD700, #FFA500);
+      background: linear-gradient(135deg, #FFD700, #FFC700);
       color: #5e3a8e;
       border-color: #5e3a8e;
       transform: scale(1.1);
       box-shadow: 0 15px 45px rgba(255,215,0,0.6);
     }
+    .slot.selected .slot-num {
+      color: #3d2461;
+      font-size: 26px;
+    }
+
     .slot-details {
-      font-size: 10px;
+      font-size: 9px;
       margin-top: 4px;
       line-height: 1.3;
-      color: inherit;
+      font-weight: 600;
+      text-align: center;
     }
     .form-card { display: none; }
     .form-group { margin-bottom: 20px; }
