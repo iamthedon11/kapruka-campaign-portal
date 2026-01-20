@@ -144,31 +144,31 @@
     .slot-num { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
     .slot-label { font-size: 11px; text-transform: uppercase; }
     .slot.available {
-      background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
-      color: #D3D3D3;
-      border-color: #D3D3D3;
+      background: linear-gradient(135deg, #90EE90, #98FB98);
+      color: #2E8B57;
+      border-color: #2E8B57;
     }
     .slot.available:hover {
       transform: translateY(-8px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(46,125,50,0.4);
+      box-shadow: 0 12px 35px rgba(46,139,87,0.4);
     }
     .slot.working {
-      background: linear-gradient(135deg, #FFF9C4, #FFF59D);
-      color: #F57F17;
-      border-color: #FDD835;
+      background: linear-gradient(135deg, #FFCC00, #CCAA00);
+      color: #995500;
+      border-color: #995500;
     }
     .slot.working:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(245,127,23,0.3);
+      box-shadow: 0 8px 25px rgba(186,142,35,0.4);
     }
     .slot.live {
-      background: linear-gradient(135deg, #1B5E20, #1B5E20);
-      color: #1B5E20;
-      border-color: #4CAF50;
+      background: linear-gradient(135deg, #4CAF50, #66BB6A);
+      color: white;
+      border-color: #2E7D32;
     }
     .slot.live:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(76,175,80,0.4);
+      box-shadow: 0 8px 25px rgba(76,175,80,0.5);
     }
     .slot.selected {
       background: linear-gradient(135deg, #FFD700, #FFA500);
@@ -396,7 +396,7 @@
       try {
         showLoading();
         const data = await getInitialData();
-        
+
         if (data && data.months && data.months.length > 0) {
           displayMonths(data.months);
           if (data.currentMonth && data.months.includes(data.currentMonth)) {
@@ -478,7 +478,7 @@
         const grid = document.getElementById(`grid-${dept.department.replace(/\s+/g,'-')}`);
         dept.slots.forEach(slot => {
           const div = document.createElement('div');
-          
+
           if (slot.available) {
             div.className = 'slot available';
             div.innerHTML = `
@@ -497,7 +497,7 @@
             `;
             div.onclick = () => showDetails(slot.details);
           }
-          
+
           grid.appendChild(div);
         });
       });
@@ -548,7 +548,7 @@
 
     document.getElementById('campaignForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       if (!selectedDept || !selectedSlot) {
         alert('Please select a slot first');
         return;
@@ -612,5 +612,3 @@
   </script>
 </body>
 </html>
-
-
