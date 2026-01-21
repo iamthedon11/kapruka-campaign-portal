@@ -547,7 +547,9 @@ async function getAllThemes() {
   }
 }
 
-// Add new theme (admin)
+// ═══════════════════════════════════════════════════════════════
+// FIXED: Add new theme - NOW GENERATES SLOTS FOR SEASONAL TOO
+// ═══════════════════════════════════════════════════════════════
 async function addTheme(themeData) {
   try {
     const theme = {
@@ -561,10 +563,13 @@ async function addTheme(themeData) {
 
     const result = await supabaseQuery('theme_config', 'POST', theme);
 
-    // If it's a Daily Post theme, generate category slots
-    if (!themeData.isSeasonal) {
-      await generateCategorySlots(themeData.startDate, themeData.endDate, themeData.slotsPerDay);
-    }
+    // ✅ FIXED: Generate slots for BOTH types (pass isSeasonal flag)
+    await generateCategorySlots(
+      themeData.startDate, 
+      themeData.endDate, 
+      themeData.slotsPerDay,
+      themeData.isSeasonal  // Pass seasonal flag
+    );
 
     return { success: true, themeId: result[0].id };
   } catch (error) {
@@ -572,15 +577,20 @@ async function addTheme(themeData) {
   }
 }
 
-// Generate category slots for a date range (admin)
-async function generateCategorySlots(startDate, endDate, slotsPerDay) {
+// ═══════════════════════════════════════════════════════════════
+// FIXED: Generate category slots - HANDLES SEASONAL THEMES
+// ═══════════════════════════════════════════════════════════════
+async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal = false) {
   try {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const slots = [];
 
-    // Shuffle categories for variety
-    const shuffledCategories = [...CATEGORIES].sort(() => Math.random() - 0.5);
+    // ✅ FIXED: For seasonal themes, use "Any Category"
+    const categoriesToUse = isSeasonal 
+      ? ['Any Category']  // Empty slot that accepts any category
+      : [...CATEGORIES].sort(() => Math.random() - 0.5);  // Shuffle for Daily Posts
+
     let categoryIndex = 0;
 
     let currentDate = new Date(start);
@@ -590,9 +600,9 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay) {
       const dateStr = currentDate.toISOString().split('T')[0];
       const monthYear = dateStr.substring(0, 7);
 
-      // Reshuffle every week (7 days)
-      if (currentDate.getDay() === 0 && currentDate > start) {
-        shuffledCategories.sort(() => Math.random() - 0.5);
+      // Reshuffle every week (7 days) - only for Daily Posts
+      if (!isSeasonal && currentDate.getDay() === 0 && currentDate > start) {
+        categoriesToUse.sort(() => Math.random() - 0.5);
         categoryIndex = 0;
         weekNumber++;
       }
@@ -602,7 +612,7 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay) {
         slots.push({
           date: dateStr,
           slot_number: slotNum,
-          category: shuffledCategories[categoryIndex % shuffledCategories.length],
+          category: categoriesToUse[categoryIndex % categoriesToUse.length],
           week_number: weekNumber,
           month_year: monthYear
         });
@@ -665,20 +675,20 @@ async function refreshCategorySlotsForMonth(month, year) {
     // Delete existing slots for this month
     await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
 
-    // Get Daily Post themes for this month
+    // Get ALL themes for this month (Daily Post AND Seasonal)
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
     const themes = await supabaseQuery(
-      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}&is_seasonal=eq.false`
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
     );
 
-    // Regenerate slots for each Daily Post theme
+    // Regenerate slots for ALL themes
     for (const theme of themes) {
       const themeStart = theme.start_date > startDate ? theme.start_date : startDate;
       const themeEnd = theme.end_date < endDate ? theme.end_date : endDate;
-      await generateCategorySlots(themeStart, themeEnd, theme.slots_per_day);
+      await generateCategorySlots(themeStart, themeEnd, theme.slots_per_day, theme.is_seasonal);
     }
 
     return { success: true };
@@ -950,4 +960,3 @@ async function getHotProductsStats() {
     throw error;
   }
 }
-
