@@ -462,22 +462,25 @@
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // FIXED: createDayCell (Issues #3 and #4)
+    // ✅ FIXED: Custom theme colors applied
     // ═══════════════════════════════════════════════════════════════
     function createDayCell(day, dateStr, dayBookings) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
-      // FIXED ISSUE #4: Get ALL themes for this date (not just first one)
       const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
       
-      // Apply seasonal styling if ANY theme is seasonal
+      // ✅ NEW: Apply custom colors for seasonal themes
       const hasSeasonal = themes.some(t => t.is_seasonal);
       if (hasSeasonal) {
         cell.classList.add('seasonal');
+        const seasonalTheme = themes.find(t => t.is_seasonal);
+        if (seasonalTheme && seasonalTheme.theme_color) {
+          cell.style.borderColor = seasonalTheme.theme_color;
+          cell.style.background = `linear-gradient(135deg, ${seasonalTheme.theme_color}22, ${seasonalTheme.theme_color}11)`;
+        }
       }
 
-      // FIXED ISSUE #4: Display all theme names joined with " + "
       const themeNames = themes.map(t => t.theme_name).join(' + ');
       
       cell.innerHTML = `
@@ -487,14 +490,12 @@
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
 
-      // FIXED ISSUE #3: Check if ALL slots are filled
       const allSlotsFilled = availableSlots.length > 0 && 
         availableSlots.every(slot => 
           dayBookings.some(b => b.slot_number === slot.slot_number && 
                                (b.status === 'Approved' || b.status === 'Pending'))
         );
 
-      // FIXED ISSUE #3: Apply filled slot styling
       if (allSlotsFilled) {
         cell.style.background = 'linear-gradient(135deg, #C8E6C9, #A5D6A7)';
         cell.style.borderColor = '#4CAF50';
@@ -547,9 +548,6 @@
       return cell;
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // FIXED: openBookingModal (Issue #4 - handle multiple themes)
-    // ═══════════════════════════════════════════════════════════════
     function openBookingModal(date, themes, slots, bookings) {
       selectedDate = date;
       const modal = document.getElementById('modal');
@@ -563,7 +561,6 @@
         day: 'numeric'
       });
 
-      // FIXED ISSUE #4: Handle array of themes
       const themeNames = Array.isArray(themes) 
         ? themes.map(t => t.theme_name).join(' + ') 
         : themes.theme_name;
