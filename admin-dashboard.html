@@ -157,7 +157,6 @@
       background: linear-gradient(135deg, #EF5350, #E53935);
       color: white;
     }
-    /* ✅ NEW: Complete button style */
     .btn-complete {
       background: linear-gradient(135deg, #9E9E9E, #757575);
       color: white;
@@ -199,7 +198,6 @@
       font-weight: 600;
       text-transform: uppercase;
     }
-    /* ✅ UPDATED: Badge colors for 4 statuses */
     .badge-submitted { background: #E1BEE7; color: #4A148C; }
     .badge-working { background: #FFF9C4; color: #F57F17; }
     .badge-live { background: #C8E6C9; color: #1B5E20; }
@@ -362,7 +360,7 @@
         </div>
       </div>
 
-           <!-- Product Suggestions Tab -->
+      <!-- Product Suggestions Tab -->
       <div id="tab-products" class="tab-content">
         <div class="card">
           <h2>💡 Product Suggestions</h2>
@@ -731,7 +729,9 @@
       loadDepartments();
     }
 
-    // ✅ UPDATED: Load Campaign Requests with 4 statuses
+    // ═══════════════════════════════════════════════════════════
+    // CAMPAIGN REQUESTS
+    // ═══════════════════════════════════════════════════════════
     async function loadRequests() {
       try {
         const requests = await getAllRequests();
@@ -745,7 +745,6 @@
         tbody.innerHTML = requests.map(r => {
           let badgeClass = 'badge-working';
           
-          // ✅ UPDATED: Handle all 4 statuses + Rejected
           if (r.status === 'Request Submitted') badgeClass = 'badge-submitted';
           else if (r.status === 'Working') badgeClass = 'badge-working';
           else if (r.status === 'Live') badgeClass = 'badge-live';
@@ -796,14 +795,16 @@
       }
     }
 
-    // Load Product Suggestions
+    // ═══════════════════════════════════════════════════════════
+    // PRODUCT SUGGESTIONS WITH EDIT FUNCTION
+    // ═══════════════════════════════════════════════════════════
     async function loadProducts() {
       try {
         const products = await getAllProductSuggestions();
         const tbody = document.getElementById('productsTable');
 
         if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No products yet</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No products yet</td></tr>';
           return;
         }
 
@@ -819,10 +820,17 @@
               <td>${p.category}</td>
               <td>${p.margin}%</td>
               <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td>${p.assignedPage || '-'}</td>
+              <td>${p.goLiveDate || '-'}</td>
               <td>
                 <div class="action-btns">
-                  <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
-                  <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+                  ${p.status === 'Pending' ? `
+                    <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+                    <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+                  ` : ''}
+                  ${p.status === 'Approved' ? `
+                    <button class="btn btn-primary" onclick="editProductDetails(${p.row}, '${p.assignedPage || ''}', '${p.goLiveDate || ''}')">Edit</button>
+                  ` : ''}
                 </div>
               </td>
             </tr>
@@ -830,36 +838,255 @@
         }).join('');
       } catch (error) {
         document.getElementById('productsTable').innerHTML = 
-          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+          '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
     async function reviewProduct(row, status) {
-      const reviewerName = prompt('Enter your name:');
-      if (!reviewerName) return;
-
-      const reviewData = { status, reviewerName };
-
       if (status === 'Approved') {
-        reviewData.assignedPage = prompt('Assigned Page (optional):') || '';
-        reviewData.goLiveDate = prompt('Go Live Date (YYYY-MM-DD, optional):') || '';
-      } else {
-        reviewData.rejectionReason = prompt('Rejection Reason (optional):') || '';
-      }
+        // Show approval modal with radio buttons and date picker
+        document.getElementById('modalContent').innerHTML = `
+          <h3>✅ Approve Product</h3>
+          <form id="approveForm">
+            <div class="form-group">
+              <label>📄 Select Page</label>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Kapruka FB" required style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Kapruka FB</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Electronic Factory" style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Electronic Factory</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Social Mart" style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Social Mart</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Handbag Factory" style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Handbag Factory</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Toys Factory" style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Toys Factory</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                  <input type="radio" name="page" value="Fashion Factory" style="width:20px;height:20px;">
+                  <span style="font-weight:600;">Fashion Factory</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+              <label>📅 Go Live Date</label>
+              <input type="date" id="goLiveDate" required style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+              <label>👤 Your Name</label>
+              <input type="text" id="reviewerName" required placeholder="Enter your name" style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+              <button type="submit" class="btn btn-success" style="flex:1;">✅ Approve</button>
+              <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </div>
+          </form>
+        `;
 
-      try {
-        showLoading();
-        await updateProductReview(row, reviewData);
-        hideLoading();
-        alert('Product review updated!');
-        loadProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
+        document.getElementById('modal').style.display = 'flex';
+
+        // Add hover effect to radio buttons
+        document.querySelectorAll('input[name="page"]').forEach(radio => {
+          radio.parentElement.addEventListener('mouseenter', function() {
+            if (!this.querySelector('input').checked) {
+              this.style.borderColor = '#FFD700';
+              this.style.background = '#f9f9f9';
+            }
+          });
+          radio.parentElement.addEventListener('mouseleave', function() {
+            if (!this.querySelector('input').checked) {
+              this.style.borderColor = '#e8e8e8';
+              this.style.background = 'white';
+            }
+          });
+          radio.addEventListener('change', function() {
+            document.querySelectorAll('input[name="page"]').forEach(r => {
+              r.parentElement.style.borderColor = '#e8e8e8';
+              r.parentElement.style.background = 'white';
+            });
+            if (this.checked) {
+              this.parentElement.style.borderColor = '#5e3a8e';
+              this.parentElement.style.background = '#f3e5f5';
+            }
+          });
+        });
+
+        document.getElementById('approveForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const selectedPage = document.querySelector('input[name="page"]:checked').value;
+          const goLiveDate = document.getElementById('goLiveDate').value;
+          const reviewerName = document.getElementById('reviewerName').value;
+
+          const reviewData = {
+            status: 'Approved',
+            reviewerName: reviewerName,
+            assignedPage: selectedPage,
+            goLiveDate: goLiveDate
+          };
+
+          try {
+            showLoading();
+            await updateProductReview(row, reviewData);
+            hideLoading();
+            closeModal();
+            alert('✅ Product approved successfully!');
+            loadProducts();
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+
+      } else {
+        // Rejection flow
+        const reviewerName = prompt('Enter your name:');
+        if (!reviewerName) return;
+
+        const rejectionReason = prompt('Rejection Reason (optional):') || '';
+
+        const reviewData = {
+          status: 'Rejected',
+          reviewerName: reviewerName,
+          rejectionReason: rejectionReason
+        };
+
+        try {
+          showLoading();
+          await updateProductReview(row, reviewData);
+          hideLoading();
+          alert('Product rejected!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
       }
     }
 
+    // ✅ EDIT PRODUCT DETAILS FUNCTION
+    async function editProductDetails(row, currentPage, currentDate) {
+      document.getElementById('modalContent').innerHTML = `
+        <h3>✏️ Edit Product Details</h3>
+        <form id="editProductForm">
+          <div class="form-group">
+            <label>📄 Select Page</label>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Kapruka FB" ${currentPage === 'Kapruka FB' ? 'checked' : ''} required style="width:20px;height:20px;">
+                <span style="font-weight:600;">Kapruka FB</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Electronic Factory" ${currentPage === 'Electronic Factory' ? 'checked' : ''} style="width:20px;height:20px;">
+                <span style="font-weight:600;">Electronic Factory</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Social Mart" ${currentPage === 'Social Mart' ? 'checked' : ''} style="width:20px;height:20px;">
+                <span style="font-weight:600;">Social Mart</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Handbag Factory" ${currentPage === 'Handbag Factory' ? 'checked' : ''} style="width:20px;height:20px;">
+                <span style="font-weight:600;">Handbag Factory</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Toys Factory" ${currentPage === 'Toys Factory' ? 'checked' : ''} style="width:20px;height:20px;">
+                <span style="font-weight:600;">Toys Factory</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
+                <input type="radio" name="editPage" value="Fashion Factory" ${currentPage === 'Fashion Factory' ? 'checked' : ''} style="width:20px;height:20px;">
+                <span style="font-weight:600;">Fashion Factory</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:20px;">
+            <label>📅 Go Live Date</label>
+            <input type="date" id="editGoLiveDate" value="${currentDate || ''}" required style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button type="submit" class="btn btn-primary" style="flex:1;">💾 Save Changes</button>
+            <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+          </div>
+        </form>
+      `;
+
+      document.getElementById('modal').style.display = 'flex';
+
+      // Set initial selected radio style
+      const checkedRadio = document.querySelector('input[name="editPage"]:checked');
+      if (checkedRadio) {
+        checkedRadio.parentElement.style.borderColor = '#5e3a8e';
+        checkedRadio.parentElement.style.background = '#f3e5f5';
+      }
+
+      // Add hover and click effects
+      document.querySelectorAll('input[name="editPage"]').forEach(radio => {
+        radio.parentElement.addEventListener('mouseenter', function() {
+          if (!this.querySelector('input').checked) {
+            this.style.borderColor = '#FFD700';
+            this.style.background = '#f9f9f9';
+          }
+        });
+        radio.parentElement.addEventListener('mouseleave', function() {
+          if (!this.querySelector('input').checked) {
+            this.style.borderColor = '#e8e8e8';
+            this.style.background = 'white';
+          }
+        });
+        radio.addEventListener('change', function() {
+          document.querySelectorAll('input[name="editPage"]').forEach(r => {
+            r.parentElement.style.borderColor = '#e8e8e8';
+            r.parentElement.style.background = 'white';
+          });
+          if (this.checked) {
+            this.parentElement.style.borderColor = '#5e3a8e';
+            this.parentElement.style.background = '#f3e5f5';
+          }
+        });
+      });
+
+      document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const selectedPage = document.querySelector('input[name="editPage"]:checked').value;
+        const goLiveDate = document.getElementById('editGoLiveDate').value;
+
+        const reviewData = {
+          status: 'Approved',
+          reviewerName: 'Updated',
+          assignedPage: selectedPage,
+          goLiveDate: goLiveDate
+        };
+
+        try {
+          showLoading();
+          await updateProductReview(row, reviewData);
+          hideLoading();
+          closeModal();
+          alert('✅ Product details updated successfully!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // CONTENT CALENDAR MANAGEMENT
+    // ═══════════════════════════════════════════════════════════
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -1014,7 +1241,9 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
     // HOT PRODUCTS MANAGEMENT
+    // ═══════════════════════════════════════════════════════════
     document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -1200,7 +1429,9 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
     // DEPARTMENT MANAGEMENT
+    // ═══════════════════════════════════════════════════════════
     document.getElementById('deptForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -1271,4 +1502,3 @@
   </script>
 </body>
 </html>
-
