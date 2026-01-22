@@ -167,6 +167,23 @@
       background: linear-gradient(135deg, #A5F0A5, #7FE67F);
     }
 
+    /* ✅ REQUEST SUBMITTED SLOTS - Light Purple with Dark Text */
+    .slot.submitted {
+      background: linear-gradient(135deg, #E1BEE7, #CE93D8);
+      color: #4A148C;
+      border-color: #6A1B9A;
+    }
+    .slot.submitted .slot-num {
+      color: #4A148C;
+    }
+    .slot.submitted .slot-label {
+      color: #4A148C;
+    }
+    .slot.submitted:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(142,36,170,0.4);
+    }
+
     /* WORKING SLOTS - Yellow/Orange with Dark Text */
     .slot.working {
       background: linear-gradient(135deg, #FFE599, #FFD966);
@@ -203,6 +220,23 @@
     .slot.live:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 25px rgba(25,118,210,0.5);
+    }
+
+    /* ✅ COMPLETED SLOTS - Gray with Dark Text */
+    .slot.completed {
+      background: linear-gradient(135deg, #BDBDBD, #9E9E9E);
+      color: #424242;
+      border-color: #757575;
+    }
+    .slot.completed .slot-num {
+      color: #212121;
+    }
+    .slot.completed .slot-label {
+      color: #616161;
+    }
+    .slot.completed:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(158,158,158,0.4);
     }
 
     /* SELECTED SLOT - Gold with Dark Purple Text */
@@ -530,11 +564,25 @@
             div.onclick = () => pickSlot(dept.department, slot.name, div);
           } else {
             const status = slot.details.status;
-            const slotClass = status === 'Working' ? 'working' : 'live';
+            let slotClass = 'working';
+            
+            // ✅ UPDATED: Handle 4 statuses
+            if (status === 'Request Submitted') slotClass = 'submitted';
+            else if (status === 'Working') slotClass = 'working';
+            else if (status === 'Live') slotClass = 'live';
+            else if (status === 'Completed') slotClass = 'completed';
+            
             div.className = 'slot ' + slotClass;
+            
+            // Shorten label if too long
+            let displayLabel = status.toUpperCase();
+            if (displayLabel.length > 12) {
+              displayLabel = displayLabel.substring(0, 10) + '..';
+            }
+            
             div.innerHTML = `
               <div class="slot-num">${slot.number}</div>
-              <div class="slot-label">${status.toUpperCase()}</div>
+              <div class="slot-label">${displayLabel}</div>
               <div class="slot-details">${slot.details.campaign.substring(0,20)}</div>
             `;
             div.onclick = () => showDetails(slot.details);
@@ -618,10 +666,11 @@
         btn.textContent = '🚀 Submit Request';
         hideLoading();
 
+        // ✅ UPDATED: Success message shows "Request Submitted"
         document.getElementById('modalContent').innerHTML = `
           <div class="modal-icon">✓</div>
           <h2>Success!</h2>
-          <p>Campaign request submitted with status: <strong>Working</strong></p>
+          <p>Campaign request submitted with status: <strong>Request Submitted</strong></p>
           <div style="background:#f5f5f5;padding:12px;border-radius:10px;margin:20px 0;font-weight:600;">${result.requestId}</div>
           <button class="modal-btn" onclick="closeSuccess()">Close</button>
         `;
