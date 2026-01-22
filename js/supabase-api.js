@@ -6,8 +6,7 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 
-// Valid status options (only 3 now)
-const VALID_STATUSES = ['Working', 'Live', 'Rejected','Completed'];
+const VALID_STATUSES = ['Request Submitted', 'Working', 'Live', 'Completed', 'Rejected'];
 
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -25,7 +24,7 @@ async function supabaseQuery(endpoint, method = 'GET', body = null) {
   if (body) options.body = JSON.stringify(body);
 
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, options);
-  
+
   if (!response.ok) {
     throw new Error(`API Error: ${response.statusText}`);
   }
@@ -44,6 +43,136 @@ function generateId(prefix) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// STUDIO CALENDAR + EXTRA CONTENT CORE
+// ═══════════════════════════════════════════════════════════════
+
+async function upsertStudioCalendarEntry(entry) {
+  const payload = {
+    date: entry.date,
+    source_type: entry.source_type,
+    source_id: entry.source_id || null,
+    product_code: entry.product_code || null,
+    page_name: entry.page_name || null,
+    format: entry.format || null,
+    content_details: entry.content_details || '',
+    reference_links: entry.reference_links || ''
+  };
+
+  if (entry.source_id) {
+    const existing = await supabaseQuery(
+      `studio_calendar?source_type=eq.${encodeURIComponent(entry.source_type)}&source_id=eq.${entry.source_id}`
+    );
+
+    if (existing.length > 0) {
+      const id = existing[0].id;
+      await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
+      return id;
+    }
+  }
+
+  const result = await supabaseQuery('studio_calendar', 'POST', payload);
+  return result[0].id;
+}
+
+async function getStudioCalendarForMonth(year, month) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+  return await supabaseQuery(
+    `studio_calendar?date=gte.${startDate}&date=lte.${endDate}&order=date.asc`
+  );
+}
+
+async function getStudioCalendarForDate(date) {
+  return await supabaseQuery(
+    `studio_calendar?date=eq.${date}&order=created_at.asc`
+  );
+}
+
+async function getStudioCalendarItem(id) {
+  const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  return rows.length ? rows[0] : null;
+}
+
+async function updateStudioCompletion(id, data) {
+  const payload = {
+    completion_status: data.completion_status,
+    content_link: data.content_link || null
+  };
+  await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
+  return { success: true };
+}
+
+async function addExtraContent(extra) {
+  const row = {
+    date: extra.date,
+    page_name: extra.page_name,
+    format: extra.format || '',
+    content_details: extra.content_details,
+    reference_links: extra.reference_links || '',
+    created_by: extra.created_by || ''
+  };
+
+  const result = await supabaseQuery('extra_content', 'POST', row);
+  const saved = result[0];
+
+  await upsertStudioCalendarEntry({
+    date: saved.date,
+    source_type: 'extra_content',
+    source_id: saved.id,
+    product_code: null,
+    page_name: saved.page_name,
+    format: saved.format,
+    content_details: saved.content_details,
+    reference_links: saved.reference_links
+  });
+
+  return saved;
+}
+
+async function updateExtraContent(id, extra) {
+  const row = {
+    date: extra.date,
+    page_name: extra.page_name,
+    format: extra.format || '',
+    content_details: extra.content_details,
+    reference_links: extra.reference_links || ''
+  };
+
+  await supabaseQuery(`extra_content?id=eq.${id}`, 'PATCH', row);
+
+  await upsertStudioCalendarEntry({
+    date: extra.date,
+    source_type: 'extra_content',
+    source_id: id,
+    product_code: null,
+    page_name: extra.page_name,
+    format: extra.format,
+    content_details: extra.content_details,
+    reference_links: extra.reference_links
+  });
+
+  return { success: true };
+}
+
+async function deleteExtraContent(id) {
+  await supabaseQuery(`extra_content?id=eq.${id}`, 'DELETE');
+  await supabaseQuery(`studio_calendar?source_type=eq.extra_content&source_id=eq.${id}`, 'DELETE');
+  return { success: true };
+}
+
+async function getExtraContentForMonth(year, month) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+  return await supabaseQuery(
+    `extra_content?date=gte.${startDate}&date=lte.${endDate}&order=date.asc`
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CAMPAIGN BOOKING API
 // ═══════════════════════════════════════════════════════════════
 
@@ -51,7 +180,7 @@ async function getInitialData() {
   const configs = await supabaseQuery('department_config?active=eq.Yes&select=month');
   const months = [...new Set(configs.map(c => c.month))];
   const currentMonth = getCurrentMonth();
-  
+
   return {
     months: months.length > 0 ? months : [currentMonth],
     currentMonth: months.includes(currentMonth) ? currentMonth : (months[0] || currentMonth)
@@ -60,7 +189,7 @@ async function getInitialData() {
 
 async function getSlotsForMonth(month) {
   const configs = await supabaseQuery(`department_config?month=eq.${encodeURIComponent(month)}&active=eq.Yes`);
-  
+
   if (configs.length === 0) return [];
 
   const requests = await supabaseQuery(`request_log?month=eq.${encodeURIComponent(month)}`);
@@ -72,7 +201,8 @@ async function getSlotsForMonth(month) {
     requests.forEach(req => {
       if (req.department === dept.department && 
           req.status && 
-          req.status !== 'Rejected') {
+          req.status !== 'Rejected' &&
+          req.status !== 'Completed') {
         bookedSlots[req.slot] = {
           requestId: req.request_id,
           campaign: req.campaign || 'N/A',
@@ -110,7 +240,9 @@ async function submitCampaignRequest(formData) {
   );
 
   const alreadyBooked = existing.some(req => 
-    req.status && req.status !== 'Rejected'
+    req.status && 
+    req.status !== 'Rejected' && 
+    req.status !== 'Completed'
   );
 
   if (alreadyBooked) {
@@ -128,7 +260,7 @@ async function submitCampaignRequest(formData) {
     duration: formData.duration,
     start_date: formData.startDate,
     end_date: formData.endDate,
-    status: 'Working'
+    status: 'Request Submitted'
   };
 
   const result = await supabaseQuery('request_log', 'POST', requestData);
@@ -141,16 +273,15 @@ async function submitCampaignRequest(formData) {
 
 async function getActiveWindow() {
   const windows = await supabaseQuery('submission_windows?status=eq.Active&order=created_at.desc&limit=1');
-  
+
   if (windows.length === 0) {
-    // Create CURRENT 7-day window (started 3 days ago, ends in 4 days)
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 3); // Started 3 days ago
-    
+    startDate.setDate(today.getDate() - 3);
+
     const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 4); // Ends in 4 days (total 7 days)
-    
+    endDate.setDate(today.getDate() + 4);
+
     const newWindow = {
       window_id: generateId('WIN'),
       start_date: startDate.toISOString().split('T')[0],
@@ -158,18 +289,18 @@ async function getActiveWindow() {
       target_suggestions: 30,
       status: 'Active'
     };
-    
+
     const result = await supabaseQuery('submission_windows', 'POST', newWindow);
     return result[0];
   }
-  
+
   return windows[0];
 }
 
 async function getProductDashboard() {
   try {
     const window = await getActiveWindow();
-    
+
     if (!window) {
       return { window: null, target: 30, actual: 0, picked: 0, categories: [], rejections: [] };
     }
@@ -214,7 +345,7 @@ async function getProductDashboard() {
 
 async function submitProductSuggestion(formData) {
   const window = await getActiveWindow();
-  
+
   if (!window) {
     throw new Error('No active submission window');
   }
@@ -239,7 +370,7 @@ async function submitProductSuggestion(formData) {
 async function searchProductSuggestions(query) {
   const products = await supabaseQuery('product_suggestions?order=timestamp.desc');
   const searchLower = query.toLowerCase();
-  
+
   return products.filter(p => 
     p.product_link.toLowerCase().includes(searchLower) ||
     p.category.toLowerCase().includes(searchLower) ||
@@ -278,11 +409,27 @@ async function getAllRequests() {
 }
 
 async function updateRequestStatus(row, status, reviewer, comments) {
+  if (!VALID_STATUSES.includes(status)) {
+    throw new Error(`Invalid status: ${status}. Valid statuses are: ${VALID_STATUSES.join(', ')}`);
+  }
+
+  const updateData = {
+    status,
+    reviewer,
+    updated_at: new Date().toISOString(),
+    comments
+  };
+
+  if (status === 'Completed') {
+    updateData.completed_at = new Date().toISOString();
+  }
+
   await supabaseQuery(
     `request_log?id=eq.${row}`,
     'PATCH',
-    { status, reviewer, updated_at: new Date().toISOString(), comments }
+    updateData
   );
+
   return { success: true };
 }
 
@@ -325,6 +472,25 @@ async function updateProductReview(row, reviewData) {
   }
 
   await supabaseQuery(`product_suggestions?id=eq.${row}`, 'PATCH', updateData);
+
+  if (reviewData.status === 'Approved') {
+    const rows = await supabaseQuery(`product_suggestions?id=eq.${row}`);
+    if (rows.length) {
+      const p = rows[0];
+
+      await upsertStudioCalendarEntry({
+        date: reviewData.goLiveDate || p.go_live_date,
+        source_type: 'product_suggestion',
+        source_id: p.id,
+        product_code: p.product_code || null,
+        page_name: reviewData.assignedPage || p.assigned_page || null,
+        format: 'Product Suggestion',
+        content_details: p.promotion_idea || p.product_link,
+        reference_links: p.product_link
+      });
+    }
+  }
+
   return { success: true };
 }
 
@@ -362,7 +528,6 @@ async function deleteDepartment(row) {
 // CONTENT CALENDAR API
 // ═══════════════════════════════════════════════════════════════
 
-// Category list (20 categories from Kapruka)
 const CATEGORIES = [
   'Cakes',
   'Flowers',
@@ -386,25 +551,21 @@ const CATEGORIES = [
   'Books & Stationery'
 ];
 
-// Get calendar data for a specific month
 async function getCalendarData(month, year) {
   try {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
-    // Get themes for this month
     const themes = await supabaseQuery(
       `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
     );
 
-    // Get category slots for this month
     const monthYear = `${year}-${String(month).padStart(2, '0')}`;
     const categorySlots = await supabaseQuery(
       `category_slots?month_year=eq.${monthYear}`
     );
 
-    // Get bookings for this month
     const bookings = await supabaseQuery(
       `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
     );
@@ -420,7 +581,6 @@ async function getCalendarData(month, year) {
   }
 }
 
-// Get theme for a specific date
 async function getThemeForDate(date) {
   try {
     const themes = await supabaseQuery(
@@ -433,7 +593,6 @@ async function getThemeForDate(date) {
   }
 }
 
-// Get category slots for a specific date
 async function getCategorySlotsForDate(date) {
   try {
     const slots = await supabaseQuery(
@@ -446,27 +605,22 @@ async function getCategorySlotsForDate(date) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FIXED: Submit content booking (Issue #2)
-// ═══════════════════════════════════════════════════════════════
 async function submitContentBooking(bookingData) {
   try {
-    // Check if slot is already booked
     const existing = await supabaseQuery(
       `content_calendar?date=eq.${bookingData.date}&slot_number=eq.${bookingData.slotNumber}`
     );
 
     const alreadyBooked = existing.some(b => b.status === 'Pending' || b.status === 'Approved');
-    
+
     if (alreadyBooked) {
       throw new Error('This slot is already booked');
     }
 
-    // Get theme for this date
     const themes = await supabaseQuery(
       `theme_config?start_date=lte.${bookingData.date}&end_date=gte.${bookingData.date}`
     );
-    
+
     const themeName = themes.length > 0 ? themes[0].theme_name : 'Daily Post';
 
     const booking = {
@@ -488,7 +642,6 @@ async function submitContentBooking(bookingData) {
   }
 }
 
-// Get all content bookings (for admin)
 async function getAllContentBookings() {
   try {
     const bookings = await supabaseQuery('content_calendar?order=date.desc,slot_number.asc');
@@ -514,7 +667,6 @@ async function getAllContentBookings() {
   }
 }
 
-// Update content booking status (admin)
 async function updateContentBooking(id, updateData) {
   try {
     const data = {
@@ -530,13 +682,30 @@ async function updateContentBooking(id, updateData) {
     }
 
     await supabaseQuery(`content_calendar?id=eq.${id}`, 'PATCH', data);
+
+    if (updateData.status === 'Approved') {
+      const rows = await supabaseQuery(`content_calendar?id=eq.${id}`);
+      if (rows.length) {
+        const b = rows[0];
+        await upsertStudioCalendarEntry({
+          date: updateData.goLiveDate || b.date,
+          source_type: 'content_booking',
+          source_id: b.id,
+          product_code: b.product_code,
+          page_name: null,
+          format: 'Content Calendar',
+          content_details: `${b.theme || ''} - ${b.category || ''}`.trim(),
+          reference_links: b.product_link || ''
+        });
+      }
+    }
+
     return { success: true };
   } catch (error) {
     throw error;
   }
 }
 
-// Get all themes (for admin)
 async function getAllThemes() {
   try {
     const themes = await supabaseQuery('theme_config?order=start_date.desc');
@@ -547,9 +716,6 @@ async function getAllThemes() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FIXED: Add new theme - NOW GENERATES SLOTS FOR SEASONAL TOO
-// ═══════════════════════════════════════════════════════════════
 async function addTheme(themeData) {
   try {
     const theme = {
@@ -563,12 +729,11 @@ async function addTheme(themeData) {
 
     const result = await supabaseQuery('theme_config', 'POST', theme);
 
-    // ✅ FIXED: Generate slots for BOTH types (pass isSeasonal flag)
     await generateCategorySlots(
       themeData.startDate, 
       themeData.endDate, 
       themeData.slotsPerDay,
-      themeData.isSeasonal  // Pass seasonal flag
+      themeData.isSeasonal
     );
 
     return { success: true, themeId: result[0].id };
@@ -577,19 +742,15 @@ async function addTheme(themeData) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FIXED: Generate category slots - HANDLES SEASONAL THEMES
-// ═══════════════════════════════════════════════════════════════
 async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal = false) {
   try {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const slots = [];
 
-    // ✅ FIXED: For seasonal themes, use "Any Category"
     const categoriesToUse = isSeasonal 
-      ? ['Any Category']  // Empty slot that accepts any category
-      : [...CATEGORIES].sort(() => Math.random() - 0.5);  // Shuffle for Daily Posts
+      ? ['Any Category']
+      : [...CATEGORIES].sort(() => Math.random() - 0.5);
 
     let categoryIndex = 0;
 
@@ -600,14 +761,12 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
       const dateStr = currentDate.toISOString().split('T')[0];
       const monthYear = dateStr.substring(0, 7);
 
-      // Reshuffle every week (7 days) - only for Daily Posts
       if (!isSeasonal && currentDate.getDay() === 0 && currentDate > start) {
         categoriesToUse.sort(() => Math.random() - 0.5);
         categoryIndex = 0;
         weekNumber++;
       }
 
-      // Create slots for this day
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
         slots.push({
           date: dateStr,
@@ -622,7 +781,6 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Batch insert
     if (slots.length > 0) {
       await supabaseQuery('category_slots', 'POST', slots);
     }
@@ -634,32 +792,26 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FIXED: Delete theme with cascade (Issue #1)
-// ═══════════════════════════════════════════════════════════════
 async function deleteTheme(themeId) {
   try {
-    // Get theme details first
     const themes = await supabaseQuery(`theme_config?id=eq.${themeId}`);
     if (themes.length === 0) throw new Error('Theme not found');
-    
+
     const theme = themes[0];
-    
-    // Delete associated category slots for this date range
+
     const slots = await supabaseQuery(
       `category_slots?date=gte.${theme.start_date}&date=lte.${theme.end_date}`
     );
-    
+
     if (slots.length > 0) {
       await supabaseQuery(
         `category_slots?date=gte.${theme.start_date}&date=lte.${theme.end_date}`,
         'DELETE'
       );
     }
-    
-    // Delete the theme
+
     await supabaseQuery(`theme_config?id=eq.${themeId}`, 'DELETE');
-    
+
     return { success: true, slotsDeleted: slots.length };
   } catch (error) {
     console.error('deleteTheme error:', error);
@@ -667,15 +819,12 @@ async function deleteTheme(themeId) {
   }
 }
 
-// Refresh category slots for a month (admin - for monthly refresh)
 async function refreshCategorySlotsForMonth(month, year) {
   try {
     const monthYear = `${year}-${String(month).padStart(2, '0')}`;
-    
-    // Delete existing slots for this month
+
     await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
 
-    // Get ALL themes for this month (Daily Post AND Seasonal)
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
@@ -684,7 +833,6 @@ async function refreshCategorySlotsForMonth(month, year) {
       `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
     );
 
-    // Regenerate slots for ALL themes
     for (const theme of themes) {
       const themeStart = theme.start_date > startDate ? theme.start_date : startDate;
       const themeEnd = theme.end_date < endDate ? theme.end_date : endDate;
@@ -698,12 +846,11 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT PERFORMANCE API - UPDATED WITH ACCOUNT LEVEL
+// PRODUCT PERFORMANCE API
 // ═══════════════════════════════════════════════════════════════
 
 async function searchProductPerformance(keyword, startDate, endDate) {
   try {
-    // Build URL with date range (dates are required now)
     let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
 
     if (startDate && endDate) {
@@ -712,7 +859,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 
     url += `order=date.desc`;
 
-    // Fetch all data in date range
     const response = await fetch(url, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -726,7 +872,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 
     const allData = await response.json();
 
-    // Filter by keyword
     const keywordLower = keyword.toLowerCase();
     const results = allData.filter(row => 
       (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
@@ -738,20 +883,16 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       return { level: 'none', data: [], aggregated: [] };
     }
 
-    // Priority Order: Account > Campaign > Adset > Ad
-    // Check if multiple ad accounts match
     const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
 
     let aggregationLevel = 'ad';
     let dataToAggregate = results;
     let groupBy = 'ad_name';
 
-    // 1. Check Account level (if multiple accounts)
     if (uniqueAccounts.length > 1) {
       aggregationLevel = 'account';
       groupBy = 'ad_account_id';
     }
-    // 2. Check Campaign level
     else {
       const campaignMatches = results.filter(r => 
         r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
@@ -762,7 +903,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
         dataToAggregate = campaignMatches;
         groupBy = 'campaign_name';
       } 
-      // 3. Check Adset level
       else {
         const adsetMatches = results.filter(r => 
           r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
@@ -773,7 +913,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
           dataToAggregate = adsetMatches;
           groupBy = 'adset_name';
         }
-        // 4. Default to Ad level
         else {
           const adMatches = results.filter(r => 
             r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
@@ -786,7 +925,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       }
     }
 
-    // Aggregate by groupBy field
     const grouped = {};
     dataToAggregate.forEach(row => {
       const key = row[groupBy] || 'Unknown';
@@ -817,7 +955,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       grouped[key].dates.push(row.date);
     });
 
-    // Calculate metrics
     const aggregated = Object.values(grouped).map(item => {
       const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
       const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
