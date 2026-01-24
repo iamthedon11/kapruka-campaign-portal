@@ -507,16 +507,26 @@
     </div>
   </div>
 
-  <script src="supabase-api.js"></script>
   <script>
-    // State Variables
-    let isLoggedIn = false;
-    let currentStudioMonth = new Date().getMonth() + 1;
-    let currentStudioYear = new Date().getFullYear();
-    let studioCalendarData = null;
+    // ═══════════════════════════════════════════════════════════
+    // SUPABASE CONFIGURATION
+    // ═══════════════════════════════════════════════════════════
+    const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
+    const ADMIN_PASSWORD = 'Kapruka2026!Admin';
     const HEAD_PASSWORD = '207';
 
-    // Page Schedule with TikTok on Sundays
+    // Page Schedule
+    const PAGE_SCHEDULE = {
+      'Kapruka FB Leads': { day: 1, slots: 3 },
+      'Electronic Factory': { day: 2, slots: 3 },
+      'Social Mart': { day: 3, slots: 3 },
+      'Fashion Factory': { day: 4, slots: 3 },
+      'Toys Factory': { day: 5, slots: 3 },
+      'Handbag Factory': { day: 6, slots: 3 },
+      'TikTok Video': { day: 0, slots: 1 }
+    };
+
     const PAGE_SCHEDULE_DISPLAY = {
       'Kapruka FB Leads': { day: 'Monday', slots: 3 },
       'Electronic Factory': { day: 'Tuesday', slots: 3 },
@@ -527,7 +537,373 @@
       'TikTok Video': { day: 'Sunday', slots: 1 }
     };
 
-    // Utility Functions
+    // ═══════════════════════════════════════════════════════════
+    // SUPABASE API FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+    async function supabaseQuery(endpoint, method = 'GET', body = null) {
+      const headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      };
+
+      const options = { method, headers };
+      if (body) options.body = JSON.stringify(body);
+
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, options);
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+
+      return response.json();
+    }
+
+    function verifyAdminPassword(password) {
+      return password === ADMIN_PASSWORD;
+    }
+
+    function getAllPageNames() {
+      return Object.keys(PAGE_SCHEDULE);
+    }
+
+    async function getAllRequests() {
+      const requests = await supabaseQuery('request_log?order=timestamp.desc');
+      return requests.map(r => ({
+        row: r.id,
+        requestId: r.request_id,
+        timestamp: r.timestamp,
+        email: r.email,
+        name: r.name,
+        department: r.department,
+        month: r.month,
+        slot: r.slot,
+        campaign: r.campaign,
+        duration: r.duration,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        status: r.status,
+        reviewer: r.reviewer || '',
+        updated: r.updated_at,
+        comments: r.comments || ''
+      }));
+    }
+
+    async function updateRequestStatus(row, status, reviewer, comments) {
+      const updateData = {
+        status,
+        reviewer,
+        updated_at: new Date().toISOString(),
+        comments
+      };
+
+      if (status === 'Completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+
+      await supabaseQuery(`request_log?id=eq.${row}`, 'PATCH', updateData);
+      return { success: true };
+    }
+
+    async function getAllProductSuggestions() {
+      const products = await supabaseQuery('product_suggestions?order=timestamp.desc');
+      return products.map(p => ({
+        row: p.id,
+        submissionId: p.submission_id,
+        timestamp: p.timestamp,
+        email: p.email,
+        name: p.name,
+        productLink: p.product_link,
+        productType: p.product_type,
+        category: p.category,
+        margin: p.margin,
+        promotionIdea: p.promotion_idea,
+        availableQty: p.available_qty,
+        status: p.status,
+        assignedPage: p.assigned_page || '',
+        goLiveDate: p.go_live_date || '',
+        slotDate: p.slot_date || '',
+        slotNumber: p.slot_number || null,
+        reviewerName: p.reviewer_name || '',
+        rejectionReason: p.rejection_reason || ''
+      }));
+    }
+
+    async function updateProductReview(row, reviewData) {
+      return await updateProductReviewWithSlot(row, reviewData);
+    }
+
+    async function updateProductReviewWithSlot(row, reviewData) {
+      try {
+        const updateData = {
+          status: reviewData.status,
+          reviewer_name: reviewData.reviewerName
+        };
+
+        if (reviewData.status === 'Approved') {
+          updateData.assigned_page = reviewData.assignedPage || '';
+          updateData.go_live_date = reviewData.goLiveDate || null;
+          updateData.slot_date = reviewData.slotDate || reviewData.goLiveDate;
+          updateData.slot_number = reviewData.slotNumber || null;
+          updateData.rejection_reason = '';
+        } else {
+          updateData.assigned_page = '';
+          updateData.go_live_date = null;
+          updateData.slot_date = null;
+          updateData.slot_number = null;
+          updateData.rejection_reason = reviewData.rejectionReason || '';
+        }
+
+        await supabaseQuery(`product_suggestions?id=eq.${row}`, 'PATCH', updateData);
+        return { success: true };
+      } catch (error) {
+        console.error('updateProductReviewWithSlot error:', error);
+        throw error;
+      }
+    }
+
+    async function getAvailableSlotsForPage(pageName) {
+      try {
+        if (!PAGE_SCHEDULE[pageName]) {
+          throw new Error(`Invalid page name: ${pageName}`);
+        }
+
+        const schedule = PAGE_SCHEDULE[pageName];
+        const targetDay = schedule.day;
+        const slotsPerDay = schedule.slots;
+
+        const dates = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let currentDate = new Date(today);
+        const daysUntilTarget = (targetDay - currentDate.getDay() + 7) % 7;
+
+        if (daysUntilTarget === 0) {
+          currentDate.setDate(currentDate.getDate() + 7);
+        } else {
+          currentDate.setDate(currentDate.getDate() + daysUntilTarget);
+        }
+
+        for (let i = 0; i < 3; i++) {
+          dates.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 7);
+        }
+
+        const contentBookings = await supabaseQuery(
+          `content_calendar?page_name=eq.${encodeURIComponent(pageName)}`
+        );
+
+        const productBookings = await supabaseQuery(
+          `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved`
+        );
+
+        const slotAvailability = [];
+
+        dates.forEach(date => {
+          for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+            const contentBooked = contentBookings.find(b => 
+              b.date === date && 
+              b.slot_number === slotNum &&
+              (b.status === 'Approved' || b.status === 'Pending')
+            );
+
+            const productBooked = productBookings.find(p => 
+              p.slot_date === date && 
+              p.slot_number === slotNum
+            );
+
+            const isBooked = !!(contentBooked || productBooked);
+
+            slotAvailability.push({
+              date: date,
+              slotNumber: slotNum,
+              available: !isBooked,
+              bookedBy: contentBooked ? `Content: ${contentBooked.product_code}` : 
+                        productBooked ? `Product: ${productBooked.submission_id}` : null
+            });
+          }
+        });
+
+        return {
+          pageName: pageName,
+          weekday: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDay],
+          slots: slotAvailability
+        };
+      } catch (error) {
+        console.error('getAvailableSlotsForPage error:', error);
+        throw error;
+      }
+    }
+
+    async function getAllContentBookings() {
+      try {
+        const bookings = await supabaseQuery('content_calendar?order=date.desc,slot_number.asc');
+        return bookings.map(b => ({
+          id: b.id,
+          date: b.date,
+          slotNumber: b.slot_number,
+          category: b.category,
+          productCode: b.product_code,
+          productLink: b.product_link,
+          status: b.status,
+          submittedBy: b.submitted_by,
+          theme: b.theme,
+          pageName: b.page_name,
+          scheduleDate: b.schedule_date,
+          goLiveDate: b.go_live_date,
+          reviewer: b.reviewer,
+          rejectionReason: b.rejection_reason,
+          createdAt: b.created_at
+        }));
+      } catch (error) {
+        console.error('getAllContentBookings error:', error);
+        return [];
+      }
+    }
+
+    async function updateContentBooking(id, updateData) {
+      try {
+        const data = {
+          status: updateData.status,
+          reviewer: updateData.reviewer,
+          updated_at: new Date().toISOString()
+        };
+
+        if (updateData.status === 'Rejected') {
+          data.rejection_reason = updateData.rejectionReason || '';
+        }
+
+        await supabaseQuery(`content_calendar?id=eq.${id}`, 'PATCH', data);
+        return { success: true };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function getAllThemes() {
+      try {
+        const themes = await supabaseQuery('theme_config?order=start_date.desc');
+        return themes;
+      } catch (error) {
+        console.error('getAllThemes error:', error);
+        return [];
+      }
+    }
+
+    async function addTheme(themeData) {
+      try {
+        const theme = {
+          theme_name: themeData.themeName,
+          start_date: themeData.startDate,
+          end_date: themeData.endDate,
+          slots_per_day: parseInt(themeData.slotsPerDay),
+          theme_color: themeData.themeColor || '#422B73',
+          is_seasonal: themeData.isSeasonal || false
+        };
+
+        const result = await supabaseQuery('theme_config', 'POST', theme);
+        return { success: true, themeId: result[0].id };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function deleteTheme(themeId) {
+      try {
+        await supabaseQuery(`theme_config?id=eq.${themeId}`, 'DELETE');
+        return { success: true };
+      } catch (error) {
+        console.error('deleteTheme error:', error);
+        throw error;
+      }
+    }
+
+    async function getStudioCalendarData(month, year) {
+      try {
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+        const categorySlots = await supabaseQuery(
+          `category_slots?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
+        );
+
+        const contentBookings = await supabaseQuery(
+          `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
+        );
+
+        const studioEntries = await supabaseQuery(
+          `studio_calendar?date=gte.${startDate}&date=lte.${endDate}`
+        );
+
+        const calendarItems = [];
+
+        categorySlots.forEach(slot => {
+          const booking = contentBookings.find(b => 
+            b.date === slot.date && 
+            b.slot_number === slot.slot_number &&
+            (b.status === 'Approved' || b.status === 'Pending')
+          );
+
+          const studioEntry = studioEntries.find(s => 
+            s.date === slot.date && 
+            s.source_type === 'content_booking' &&
+            s.source_id === booking?.id
+          );
+
+          calendarItems.push({
+            date: slot.date,
+            slotNumber: slot.slot_number,
+            category: slot.category,
+            type: 'content_slot',
+            status: booking ? (booking.status === 'Approved' ? 'booked' : 'pending') : 'empty',
+            productCode: booking?.product_code || null,
+            productLink: booking?.product_link || null,
+            theme: booking?.theme || '',
+            submittedBy: booking?.submitted_by || null,
+            studioStatus: studioEntry?.completion_status || 'not_started',
+            studioLink: studioEntry?.content_link || null,
+            studioId: studioEntry?.id || null,
+            bookingId: booking?.id || null
+          });
+        });
+
+        return {
+          themes: [],
+          calendarItems: calendarItems.sort((a, b) => {
+            if (a.date === b.date) {
+              return (a.slotNumber || 0) - (b.slotNumber || 0);
+            }
+            return a.date.localeCompare(b.date);
+          })
+        };
+      } catch (error) {
+        console.error('getStudioCalendarData error:', error);
+        throw error;
+      }
+    }
+
+    async function updateStudioCompletion(id, data) {
+      const payload = {};
+      if (data.completion_status) {
+        payload.completion_status = data.completion_status;
+      }
+      if (data.content_link !== undefined) {
+        payload.content_link = data.content_link || null;
+      }
+      await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
+      return { success: true };
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STATE & UI FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+    let isLoggedIn = false;
+    let currentStudioMonth = new Date().getMonth() + 1;
+    let currentStudioYear = new Date().getFullYear();
+    let studioCalendarData = null;
+
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -545,18 +921,17 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    // Login & Navigation
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
 
-      if (typeof verifyAdminPassword === 'function' && verifyAdminPassword(password)) {
+      if (verifyAdminPassword(password)) {
         isLoggedIn = true;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
         loadAllData();
       } else {
-        alert('Invalid password');
+        alert('❌ Invalid password');
       }
     });
 
@@ -589,7 +964,6 @@
       loadProducts();
     }
 
-    // Campaign Requests
     async function loadRequests() {
       try {
         const requests = await getAllRequests();
@@ -651,7 +1025,6 @@
       }
     }
 
-    // Product Suggestions with Available Slots
     async function loadProducts() {
       try {
         const products = await getAllProductSuggestions();
@@ -938,7 +1311,6 @@
       }
     }
 
-    // Content Calendar (Simplified - No Go-Live Date Required)
     async function loadContentData() {
       try {
         const bookings = await getAllContentBookings();
@@ -1063,7 +1435,7 @@
     });
 
     async function deleteThemeFunc(id) {
-      if (!confirm('Delete this theme and all its category slots?')) return;
+      if (!confirm('Delete this theme?')) return;
 
       try {
         showLoading();
@@ -1077,7 +1449,6 @@
       }
     }
 
-    // Studio Calendar with 4-Stage Workflow
     async function loadStudioCalendar() {
       try {
         showLoading();
@@ -1097,10 +1468,11 @@
     }
 
     function updateStudioStats(items) {
-      const total = items.length;
+      const total = items.filter(i => i.status === 'booked').length;
       let notStarted = 0, working = 0, submitted = 0, approved = 0;
 
       items.forEach(item => {
+        if (item.status !== 'booked') return;
         const status = item.studioStatus || 'not_started';
         if (status === 'not_started') notStarted++;
         else if (status === 'working') working++;
@@ -1124,17 +1496,14 @@
       const grid = document.getElementById('studioCalendarGrid');
       grid.innerHTML = '';
 
-      // Empty cells before first day
       for (let i = 0; i < startDayOfWeek; i++) {
         grid.appendChild(createEmptyCell());
       }
 
-      // Days of month
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayOfWeek = new Date(dateStr).getDay();
 
-        // Determine assigned page based on day
         let assignedPage = '';
         if (dayOfWeek === 1) assignedPage = 'Kapruka FB Leads';
         else if (dayOfWeek === 2) assignedPage = 'Electronic Factory';
@@ -1144,7 +1513,7 @@
         else if (dayOfWeek === 6) assignedPage = 'Handbag Factory';
         else if (dayOfWeek === 0) assignedPage = 'TikTok Video';
 
-        const dayItems = data.calendarItems.filter(item => item.date === dateStr);
+        const dayItems = data.calendarItems.filter(item => item.date === dateStr && item.status === 'booked');
         grid.appendChild(createDayCell(day, dateStr, dayItems, assignedPage));
       }
     }
@@ -1297,6 +1666,11 @@
     }
 
     async function updateStudioStatus(studioId, status, requirePassword) {
+      if (!studioId) {
+        alert('No studio entry found');
+        return;
+      }
+
       if (requirePassword) {
         const password = prompt('Enter Head Password (207):');
         if (password !== HEAD_PASSWORD) {
@@ -1321,6 +1695,11 @@
     }
 
     async function submitContentLink(studioId) {
+      if (!studioId) {
+        alert('No studio entry found');
+        return;
+      }
+
       const contentLink = document.getElementById('contentLinkInput').value;
       if (!contentLink) {
         alert('Please enter content link');
