@@ -356,7 +356,7 @@
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
+      gap: 8px;
       margin-top: 20px;
     }
     .calendar-day-header {
@@ -372,14 +372,15 @@
       background: white;
       border: 2px solid #e8e8e8;
       border-radius: 12px;
-      min-height: 160px;
-      padding: 10px;
+      min-height: 140px;
+      padding: 8px;
       transition: all 0.3s;
       position: relative;
+      overflow-y: auto;
+      max-height: 300px;
     }
     .calendar-day:hover {
       border-color: #FFD700;
-      transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     .calendar-day.empty {
@@ -388,44 +389,28 @@
       opacity: 0.6;
     }
     .calendar-day.empty:hover {
-      transform: none;
       box-shadow: none;
       border-color: #e8e8e8;
     }
     .day-number {
       font-weight: 700;
       color: #5e3a8e;
-      font-size: 16px;
-      margin-bottom: 8px;
+      font-size: 14px;
+      margin-bottom: 6px;
     }
-    .day-content-item {
-      background: #E8F5E9;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 10px;
-      margin-bottom: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .day-content-item:hover {
-      background: #C8E6C9;
-      transform: scale(1.02);
-    }
-    .day-content-item.booked {
-      background: #C8E6C9;
-      border-left: 3px solid #43A047;
-    }
-    .day-content-item.empty {
-      background: #FFF9C4;
-      border-left: 3px solid #F57C00;
-    }
-    .day-content-item.pending {
-      background: #FFE0B2;
-      border-left: 3px solid #FB8C00;
-    }
-    .day-content-item.tiktok {
-      background: #E1BEE7;
-      border-left: 3px solid #8E24AA;
+
+    @media (max-width: 768px) {
+      h1 { font-size: 32px; }
+      .tabs { flex-direction: column; }
+      .tab-btn { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 10px; }
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+      .calendar-day {
+        min-height: auto;
+      }
     }
     .slot-item {
       padding: 16px;
@@ -457,20 +442,6 @@
     .slot-booked:hover {
       transform: none;
       box-shadow: none;
-    }
-
-    @media (max-width: 768px) {
-      h1 { font-size: 32px; }
-      .tabs { flex-direction: column; }
-      .tab-btn { width: 100%; }
-      table { font-size: 12px; }
-      th, td { padding: 10px; }
-      .calendar-grid {
-        grid-template-columns: 1fr;
-      }
-      .calendar-day {
-        min-height: auto;
-      }
     }
   </style>
 </head>
@@ -697,7 +668,7 @@
             <div class="calendar-day-header">Thu</div>
             <div class="calendar-day-header">Fri</div>
             <div class="calendar-day-header">Sat</div>
-            <div id="studioCalendarGrid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:10px;">
+            <div id="studioCalendarGrid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
               <!-- Calendar days will be injected here -->
             </div>
           </div>
@@ -729,15 +700,14 @@
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
 
-    const PAGE_SCHEDULE_CONFIG = {
-      1: { page: 'Kapruka FB Leads', slots: 3 },      // Monday
-      2: { page: 'Electronic Factory', slots: 3 },    // Tuesday
-      3: { page: 'Social Mart', slots: 3 },          // Wednesday
-      4: { page: 'Fashion Factory', slots: 3 },       // Thursday
-      5: { page: 'Toys Factory', slots: 3 },         // Friday
-      6: { page: 'Handbag Factory', slots: 3 },      // Saturday
-      0: { page: 'TikTok Video', slots: 1 }          // Sunday
-    };
+    const ALL_PAGES = [
+      'Kapruka FB Leads',
+      'Electronic Factory',
+      'Social Mart',
+      'Fashion Factory',
+      'Toys Factory',
+      'Handbag Factory'
+    ];
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -1154,7 +1124,7 @@
               <td>${t.slots_per_day}</td>
               <td>${t.is_seasonal ? '🌟 Seasonal' : '📅 Regular'}</td>
               <td>
-                <button class="btn btn-danger" onclick="deleteTheme(${t.id})">Delete</button>
+                <button class="btn btn-danger" onclick="deleteThemeFunc(${t.id})">Delete</button>
               </td>
             </tr>
           `).join('');
@@ -1187,7 +1157,7 @@
       }
     });
 
-    async function deleteTheme(id) {
+    async function deleteThemeFunc(id) {
       if (!confirm('Delete this theme?')) return;
       try {
         showLoading();
@@ -1202,7 +1172,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR WITH THEMES AND PAGE SCHEDULE
+    // STUDIO CALENDAR - ALL 6 PAGES SHOW ON EVERY DAY
     // ═══════════════════════════════════════════════════════════
 
     async function loadStudioCalendar() {
@@ -1290,14 +1260,13 @@
         const dayOfWeek = new Date(dateStr).getDay();
         const dayItems = itemsByDate[dateStr] || [];
         const dayThemes = themesByDate[dateStr] || [];
-        const pageConfig = PAGE_SCHEDULE_CONFIG[dayOfWeek];
         
-        const cell = createStudioDayCell(day, dateStr, dayItems, dayThemes, pageConfig, dayOfWeek);
+        const cell = createStudioDayCell(day, dateStr, dayItems, dayThemes, dayOfWeek);
         grid.appendChild(cell);
       }
     }
 
-    function createStudioDayCell(day, dateStr, dayItems, dayThemes, pageConfig, dayOfWeek) {
+    function createStudioDayCell(day, dateStr, dayItems, dayThemes, dayOfWeek) {
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
 
@@ -1310,8 +1279,9 @@
       // Show themes if any
       if (dayThemes.length > 0) {
         const themeDiv = document.createElement('div');
-        themeDiv.style.cssText = 'font-size:9px;color:#666;margin-bottom:6px;font-weight:600;padding:3px 6px;background:#f0f0f0;border-radius:4px;text-align:center;';
+        themeDiv.style.cssText = 'font-size:8px;color:#666;margin-bottom:5px;font-weight:600;padding:2px 4px;background:#f0f0f0;border-radius:3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         themeDiv.textContent = dayThemes.map(t => t.theme_name).join(' + ');
+        themeDiv.title = dayThemes.map(t => t.theme_name).join(', ');
         cell.appendChild(themeDiv);
 
         // Apply theme color
@@ -1322,70 +1292,72 @@
         }
       }
 
-      // Show page assignment for this day
-      if (pageConfig) {
+      // Group items by page
+      const itemsByPage = {};
+      dayItems.forEach(item => {
+        const pageName = item.pageName || (item.type === 'tiktok_slot' ? 'TikTok Video' : 'Unknown');
+        if (!itemsByPage[pageName]) {
+          itemsByPage[pageName] = [];
+        }
+        itemsByPage[pageName].push(item);
+      });
+
+      // Show all 6 pages for weekdays (Mon-Sat), TikTok for Sunday
+      const allPages = dayOfWeek === 0 
+        ? ['TikTok Video'] 
+        : ALL_PAGES;
+
+      allPages.forEach(pageName => {
+        const pageItems = itemsByPage[pageName] || [];
+        const slotsForPage = pageName === 'TikTok Video' ? 1 : 3;
+
+        // Page header (small and clean)
         const pageDiv = document.createElement('div');
-        pageDiv.style.cssText = 'font-size:10px;color:#5e3a8e;margin-bottom:8px;font-weight:700;padding:4px 6px;background:rgba(94,58,142,0.1);border-radius:4px;text-align:center;';
-        pageDiv.textContent = `📱 ${pageConfig.page}`;
+        pageDiv.style.cssText = 'font-size:8px;color:#5e3a8e;margin:5px 0 3px 0;font-weight:700;padding:2px 4px;background:rgba(94,58,142,0.08);border-radius:3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        pageDiv.textContent = `📱 ${pageName}`;
+        pageDiv.title = pageName;
         cell.appendChild(pageDiv);
 
         // Show slots for this page
-        for (let slotNum = 1; slotNum <= pageConfig.slots; slotNum++) {
-          // Check if this slot is booked
-          const slotItem = dayItems.find(item => item.slotNumber === slotNum);
+        for (let slotNum = 1; slotNum <= slotsForPage; slotNum++) {
+          const slotItem = pageItems.find(item => item.slotNumber === slotNum);
           
           const slotDiv = document.createElement('div');
-          slotDiv.className = 'day-content-item';
+          slotDiv.style.cssText = 'font-size:8px;padding:3px 4px;margin-bottom:2px;border-radius:3px;cursor:pointer;border-left:2px solid transparent;';
           
           if (slotItem) {
             if (slotItem.status === 'booked') {
-              slotDiv.classList.add('booked');
-              slotDiv.innerHTML = `
-                <strong>Slot ${slotNum}</strong>
-                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'N/A'}</div>
-                <div style="font-size:8px;color:#2E7D32;">● Booked</div>
-              `;
+              slotDiv.style.background = '#C8E6C9';
+              slotDiv.style.borderLeft = '2px solid #43A047';
+              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#2E7D32;">●</span>`;
+              slotDiv.title = `Slot ${slotNum}: ${slotItem.category || 'Booked'} - ${slotItem.productCode || 'N/A'}`;
             } else if (slotItem.status === 'pending') {
-              slotDiv.classList.add('pending');
-              slotDiv.innerHTML = `
-                <strong>Slot ${slotNum}</strong>
-                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'N/A'}</div>
-                <div style="font-size:8px;color:#F57C00;">◐ Pending</div>
-              `;
+              slotDiv.style.background = '#FFE0B2';
+              slotDiv.style.borderLeft = '2px solid #FB8C00';
+              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#F57C00;">◐</span>`;
+              slotDiv.title = `Slot ${slotNum}: Pending - ${slotItem.category || 'N/A'}`;
             } else if (slotItem.status === 'empty') {
-              slotDiv.classList.add('empty');
-              slotDiv.innerHTML = `
-                <strong>Slot ${slotNum}</strong>
-                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'Any'}</div>
-                <div style="font-size:8px;color:#F57C00;">○ Empty</div>
-              `;
+              slotDiv.style.background = '#FFF9C4';
+              slotDiv.style.borderLeft = '2px solid #F57C00';
+              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#F57C00;">○</span>`;
+              slotDiv.title = `Slot ${slotNum}: Empty - ${slotItem.category || 'Any'}`;
             }
 
             slotDiv.onclick = (e) => {
               e.stopPropagation();
-              showContentDetails(slotItem, dateStr, pageConfig);
+              showContentDetails(slotItem, dateStr, { page: pageName, slots: slotsForPage });
             };
           } else {
-            // No content calendar slot for this - show empty
-            slotDiv.classList.add('empty');
-            slotDiv.innerHTML = `
-              <strong>Slot ${slotNum}</strong>
-              <div style="font-size:8px;color:#999;">○ No Content</div>
-            `;
+            // No content calendar entry - show as empty
+            slotDiv.style.background = '#f5f5f5';
+            slotDiv.style.borderLeft = '2px solid #ccc';
+            slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#999;">○</span>`;
+            slotDiv.title = `Slot ${slotNum}: No Content`;
           }
 
           cell.appendChild(slotDiv);
         }
-      } else {
-        // No page assigned to this day (shouldn't happen with our config)
-        if (dayItems.length === 0) {
-          cell.classList.add('empty');
-          const emptyDiv = document.createElement('div');
-          emptyDiv.style.cssText = 'font-size:11px;color:#999;text-align:center;padding:10px;';
-          emptyDiv.textContent = 'No page assigned';
-          cell.appendChild(emptyDiv);
-        }
-      }
+      });
 
       return cell;
     }
