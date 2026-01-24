@@ -63,7 +63,7 @@ function getDayName(dayNumber) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SLOT AVAILABILITY FUNCTIONS (NEW)
+// SLOT AVAILABILITY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
 async function getAvailableSlotsForPage(pageName) {
@@ -253,8 +253,22 @@ async function generateEmptySlotsForMonth(year, month) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
     
+    // Get ALL existing slots for the entire month at once
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    const existingSlots = await supabaseQuery(
+      `studio_calendar?date=gte.${startDateStr}&date=lte.${endDateStr}&slot_type=eq.lead_form`
+    );
+    
+    // Create a Set for fast lookup of existing slots
+    const existingKeys = new Set(
+      existingSlots.map(s => `${s.date}_${s.slot_number}`)
+    );
+    
     const slots = [];
     
+    // Loop through all days in the month
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const dayOfWeek = d.getDay();
@@ -262,16 +276,12 @@ async function generateEmptySlotsForMonth(year, month) {
       
       if (!schedule) continue;
       
-      // Check existing slots
-      const existing = await supabaseQuery(
-        `studio_calendar?date=eq.${dateStr}&slot_type=eq.lead_form`
-      );
-      
-      // Create missing empty slots
+      // Create missing empty slots for this day
       for (let slotNum = 1; slotNum <= schedule.slots; slotNum++) {
-        const hasSlot = existing.some(e => e.slot_number === slotNum);
+        const slotKey = `${dateStr}_${slotNum}`;
         
-        if (!hasSlot) {
+        // Only add if it doesn't exist
+        if (!existingKeys.has(slotKey)) {
           slots.push({
             date: dateStr,
             source_type: 'lead_form',
@@ -290,7 +300,7 @@ async function generateEmptySlotsForMonth(year, month) {
       }
     }
     
-    // Insert empty slots - Let Supabase auto-generate IDs
+    // Insert empty slots only if there are new ones
     if (slots.length > 0) {
       await supabaseQuery('studio_calendar', 'POST', slots);
     }
