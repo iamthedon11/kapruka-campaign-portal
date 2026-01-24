@@ -161,6 +161,10 @@
       background: linear-gradient(135deg, #9E9E9E, #757575);
       color: white;
     }
+    .btn-info {
+      background: linear-gradient(135deg, #29B6F6, #0288D1);
+      color: white;
+    }
     .table-container {
       overflow-x: auto;
       margin-top: 20px;
@@ -206,6 +210,7 @@
     .badge-pending { background: #FFF9C4; color: #F57F17; }
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
     .badge-warning { background: #FFE0B2; color: #E65100; }
+    .badge-new { background: #E3F2FD; color: #1565C0; }
     .action-btns {
       display: flex;
       gap: 8px;
@@ -377,7 +382,7 @@
       transition: all 0.3s;
       position: relative;
       overflow-y: auto;
-      max-height: 300px;
+      max-height: 400px;
     }
     .calendar-day:hover {
       border-color: #FFD700;
@@ -588,13 +593,14 @@
                   <th>Slot</th>
                   <th>Category</th>
                   <th>Product Code</th>
+                  <th>Page</th>
                   <th>Status</th>
                   <th>Go Live</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="contentTable">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -630,16 +636,16 @@
           <!-- DASHBOARD STATS -->
           <div class="stats-grid">
             <div class="stat-card" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
-              <div class="stat-label" style="color:#2E7D32;">Total Slots</div>
+              <div class="stat-label" style="color:#2E7D32;">Total Content</div>
               <div class="stat-number" style="color:#1B5E20;" id="totalSlots">0</div>
             </div>
-            <div class="stat-card" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);">
-              <div class="stat-label" style="color:#E65100;">Booked</div>
-              <div class="stat-number" style="color:#BF360C;" id="bookedSlots">0</div>
-            </div>
             <div class="stat-card" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
-              <div class="stat-label" style="color:#1565C0;">Empty</div>
-              <div class="stat-number" style="color:#0D47A1;" id="emptySlots">0</div>
+              <div class="stat-label" style="color:#1565C0;">New</div>
+              <div class="stat-number" style="color:#0D47A1;" id="newSlots">0</div>
+            </div>
+            <div class="stat-card" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);">
+              <div class="stat-label" style="color:#E65100;">Working</div>
+              <div class="stat-number" style="color:#BF360C;" id="workingSlots">0</div>
             </div>
             <div class="stat-card" style="background:linear-gradient(135deg,#C8E6C9,#A5D6A7);">
               <div class="stat-label" style="color:#2E7D32;">Completed</div>
@@ -657,7 +663,6 @@
               <h3 id="studioMonthTitle">January 2026</h3>
               <button onclick="changeStudioMonth(1)">Next ▶</button>
             </div>
-            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
           </div>
 
           <div class="calendar-grid">
@@ -700,14 +705,16 @@
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
 
-    const ALL_PAGES = [
-      'Kapruka FB Leads',
-      'Electronic Factory',
-      'Social Mart',
-      'Fashion Factory',
-      'Toys Factory',
-      'Handbag Factory'
-    ];
+    // Page schedule: which page gets which day
+    const PAGE_SCHEDULE = {
+      1: 'Kapruka FB Leads',      // Monday
+      2: 'Electronic Factory',    // Tuesday
+      3: 'Social Mart',          // Wednesday
+      4: 'Fashion Factory',       // Thursday
+      5: 'Toys Factory',         // Friday
+      6: 'Handbag Factory',      // Saturday
+      0: 'TikTok Video'          // Sunday
+    };
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -1082,7 +1089,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR
+    // CONTENT CALENDAR WITH APPROVE/REJECT
     // ═══════════════════════════════════════════════════════════
     
     async function loadContentData() {
@@ -1091,20 +1098,31 @@
         const tbody = document.getElementById('contentTable');
 
         if (bookings.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No content bookings yet</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No content bookings yet</td></tr>';
         } else {
-          tbody.innerHTML = bookings.slice(0, 50).map(b => {
+          tbody.innerHTML = bookings.slice(0, 100).map(b => {
             let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
                             b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+            const actions = b.status === 'Pending' 
+              ? `
+                <div class="action-btns">
+                  <button class="btn btn-success" onclick="approveContentBooking(${b.id})">Approve</button>
+                  <button class="btn btn-danger" onclick="rejectContentBooking(${b.id})">Reject</button>
+                </div>
+              `
+              : `<span class="badge ${badgeClass}">${b.status}</span>`;
+
             return `
               <tr>
                 <td>${b.date}</td>
                 <td>${b.slotNumber}</td>
                 <td>${b.category}</td>
                 <td><strong>${b.productCode}</strong></td>
+                <td>${b.pageName || '-'}</td>
                 <td><span class="badge ${badgeClass}">${b.status}</span></td>
                 <td>${b.goLiveDate || '-'}</td>
-                <td>-</td>
+                <td>${actions}</td>
               </tr>
             `;
           }).join('');
@@ -1131,6 +1149,53 @@
         }
       } catch (error) {
         console.error('Content Calendar Error:', error);
+      }
+    }
+
+    async function approveContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const goLiveDate = prompt('Go Live Date (YYYY-MM-DD):');
+      if (!goLiveDate) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Approved',
+          reviewer: reviewer,
+          goLiveDate: goLiveDate
+        });
+        hideLoading();
+        alert('✅ Content booking approved!');
+        loadContentData();
+        loadStudioCalendar(); // Refresh studio calendar
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const reason = prompt('Rejection reason:');
+      if (!reason) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Rejected',
+          reviewer: reviewer,
+          rejectionReason: reason
+        });
+        hideLoading();
+        alert('✅ Content booking rejected!');
+        loadContentData();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
       }
     }
 
@@ -1172,7 +1237,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR - ALL 6 PAGES SHOW ON EVERY DAY
+    // STUDIO CALENDAR - SHOWS CONTENT CALENDAR + ASSIGNED PAGE
     // ═══════════════════════════════════════════════════════════
 
     async function loadStudioCalendar() {
@@ -1199,15 +1264,17 @@
     function updateStudioStats() {
       if (!studioCalendarData) return;
 
-      const totalSlots = studioCalendarData.calendarItems.length;
-      const bookedSlots = studioCalendarData.calendarItems.filter(item => item.status === 'booked').length;
-      const emptySlots = studioCalendarData.calendarItems.filter(item => item.status === 'empty').length;
-      const completedSlots = studioCalendarData.calendarItems.filter(item => item.studioStatus === 'completed').length;
-      const completionRate = bookedSlots > 0 ? Math.round((completedSlots / bookedSlots) * 100) : 0;
+      const approvedItems = studioCalendarData.calendarItems.filter(item => item.status === 'booked');
+      
+      const totalSlots = approvedItems.length;
+      const newSlots = approvedItems.filter(item => !item.studioStatus || item.studioStatus === 'new').length;
+      const workingSlots = approvedItems.filter(item => item.studioStatus === 'working').length;
+      const completedSlots = approvedItems.filter(item => item.studioStatus === 'completed').length;
+      const completionRate = totalSlots > 0 ? Math.round((completedSlots / totalSlots) * 100) : 0;
 
       document.getElementById('totalSlots').textContent = totalSlots;
-      document.getElementById('bookedSlots').textContent = bookedSlots;
-      document.getElementById('emptySlots').textContent = emptySlots;
+      document.getElementById('newSlots').textContent = newSlots;
+      document.getElementById('workingSlots').textContent = workingSlots;
       document.getElementById('completedSlots').textContent = completedSlots;
       document.getElementById('completionRate').textContent = completionRate + '%';
     }
@@ -1229,7 +1296,8 @@
       // Group calendar items by date
       const itemsByDate = {};
       if (studioCalendarData && studioCalendarData.calendarItems) {
-        studioCalendarData.calendarItems.forEach(item => {
+        // Only show approved items
+        studioCalendarData.calendarItems.filter(item => item.status === 'booked').forEach(item => {
           if (!itemsByDate[item.date]) {
             itemsByDate[item.date] = [];
           }
@@ -1270,6 +1338,10 @@
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
 
+      if (dayItems.length === 0) {
+        cell.classList.add('empty');
+      }
+
       // Day number
       const dayNumberDiv = document.createElement('div');
       dayNumberDiv.className = 'day-number';
@@ -1292,77 +1364,47 @@
         }
       }
 
-      // Group items by page
-      const itemsByPage = {};
-      dayItems.forEach(item => {
-        const pageName = item.pageName || (item.type === 'tiktok_slot' ? 'TikTok Video' : 'Unknown');
-        if (!itemsByPage[pageName]) {
-          itemsByPage[pageName] = [];
-        }
-        itemsByPage[pageName].push(item);
-      });
+      // Get assigned page for this day
+      const assignedPage = PAGE_SCHEDULE[dayOfWeek];
 
-      // Show all 6 pages for weekdays (Mon-Sat), TikTok for Sunday
-      const allPages = dayOfWeek === 0 
-        ? ['TikTok Video'] 
-        : ALL_PAGES;
-
-      allPages.forEach(pageName => {
-        const pageItems = itemsByPage[pageName] || [];
-        const slotsForPage = pageName === 'TikTok Video' ? 1 : 3;
-
-        // Page header (small and clean)
+      if (assignedPage) {
+        // Show assigned page header
         const pageDiv = document.createElement('div');
-        pageDiv.style.cssText = 'font-size:8px;color:#5e3a8e;margin:5px 0 3px 0;font-weight:700;padding:2px 4px;background:rgba(94,58,142,0.08);border-radius:3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-        pageDiv.textContent = `📱 ${pageName}`;
-        pageDiv.title = pageName;
+        pageDiv.style.cssText = 'font-size:9px;color:#5e3a8e;margin:5px 0 5px 0;font-weight:700;padding:3px 5px;background:rgba(94,58,142,0.1);border-radius:4px;text-align:center;';
+        pageDiv.textContent = `📱 ${assignedPage}`;
         cell.appendChild(pageDiv);
+      }
 
-        // Show slots for this page
-        for (let slotNum = 1; slotNum <= slotsForPage; slotNum++) {
-          const slotItem = pageItems.find(item => item.slotNumber === slotNum);
-          
-          const slotDiv = document.createElement('div');
-          slotDiv.style.cssText = 'font-size:8px;padding:3px 4px;margin-bottom:2px;border-radius:3px;cursor:pointer;border-left:2px solid transparent;';
-          
-          if (slotItem) {
-            if (slotItem.status === 'booked') {
-              slotDiv.style.background = '#C8E6C9';
-              slotDiv.style.borderLeft = '2px solid #43A047';
-              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#2E7D32;">●</span>`;
-              slotDiv.title = `Slot ${slotNum}: ${slotItem.category || 'Booked'} - ${slotItem.productCode || 'N/A'}`;
-            } else if (slotItem.status === 'pending') {
-              slotDiv.style.background = '#FFE0B2';
-              slotDiv.style.borderLeft = '2px solid #FB8C00';
-              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#F57C00;">◐</span>`;
-              slotDiv.title = `Slot ${slotNum}: Pending - ${slotItem.category || 'N/A'}`;
-            } else if (slotItem.status === 'empty') {
-              slotDiv.style.background = '#FFF9C4';
-              slotDiv.style.borderLeft = '2px solid #F57C00';
-              slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#F57C00;">○</span>`;
-              slotDiv.title = `Slot ${slotNum}: Empty - ${slotItem.category || 'Any'}`;
-            }
+      // Show content items
+      dayItems.forEach(item => {
+        const statusColor = item.studioStatus === 'completed' ? '#43A047' :
+                           item.studioStatus === 'working' ? '#F57C00' : '#2196F3';
+        const statusIcon = item.studioStatus === 'completed' ? '✓' :
+                          item.studioStatus === 'working' ? '⚙' : '●';
+        const statusText = item.studioStatus === 'completed' ? 'Done' :
+                          item.studioStatus === 'working' ? 'Working' : 'New';
 
-            slotDiv.onclick = (e) => {
-              e.stopPropagation();
-              showContentDetails(slotItem, dateStr, { page: pageName, slots: slotsForPage });
-            };
-          } else {
-            // No content calendar entry - show as empty
-            slotDiv.style.background = '#f5f5f5';
-            slotDiv.style.borderLeft = '2px solid #ccc';
-            slotDiv.innerHTML = `<strong>S${slotNum}</strong> <span style="color:#999;">○</span>`;
-            slotDiv.title = `Slot ${slotNum}: No Content`;
-          }
+        const contentDiv = document.createElement('div');
+        contentDiv.style.cssText = `font-size:9px;padding:5px;margin-bottom:4px;border-radius:4px;cursor:pointer;background:#fff;border-left:3px solid ${statusColor};`;
+        contentDiv.innerHTML = `
+          <div style="font-weight:700;color:#333;margin-bottom:2px;">${item.category || 'Content'}</div>
+          <div style="font-size:8px;color:#666;">${item.productCode || 'N/A'}</div>
+          <div style="font-size:8px;color:${statusColor};margin-top:2px;">${statusIcon} ${statusText}</div>
+        `;
+        contentDiv.title = `${item.category} - ${item.productCode} (${statusText})`;
+        
+        contentDiv.onclick = (e) => {
+          e.stopPropagation();
+          showStudioContentDetails(item, dateStr, assignedPage);
+        };
 
-          cell.appendChild(slotDiv);
-        }
+        cell.appendChild(contentDiv);
       });
 
       return cell;
     }
 
-    function showContentDetails(item, date, pageConfig) {
+    function showStudioContentDetails(item, date, assignedPage) {
       const dateObj = new Date(date);
       const formattedDate = dateObj.toLocaleDateString('en-US', { 
         weekday: 'long', 
@@ -1371,34 +1413,24 @@
         year: 'numeric' 
       });
 
+      const currentStatus = item.studioStatus || 'new';
+
       let detailsHTML = `
         <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>📋 Content Slot Details</h3>
+        <h3>🎬 Studio Content Details</h3>
         <div style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);padding:15px;border-radius:12px;margin-bottom:20px;text-align:center;">
           <div style="font-size:18px;font-weight:700;color:#1B5E20;">${formattedDate}</div>
-          ${pageConfig ? `<div style="font-size:14px;color:#2E7D32;margin-top:5px;">📱 ${pageConfig.page}</div>` : ''}
+          <div style="font-size:14px;color:#2E7D32;margin-top:5px;">📱 ${assignedPage}</div>
         </div>
         <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
           <div style="margin-bottom:15px;">
-            <strong style="color:#5e3a8e;">Slot Number:</strong><br>
-            Slot ${item.slotNumber || 'N/A'}
-          </div>
-          <div style="margin-bottom:15px;">
             <strong style="color:#5e3a8e;">Category:</strong><br>
-            ${item.category || item.type || 'N/A'}
+            ${item.category || 'N/A'}
           </div>
           <div style="margin-bottom:15px;">
-            <strong style="color:#5e3a8e;">Status:</strong><br>
-            <span class="badge badge-${item.status === 'booked' ? 'approved' : item.status === 'empty' ? 'warning' : 'pending'}">
-              ${item.status.toUpperCase()}
-            </span>
+            <strong style="color:#5e3a8e;">Product Code:</strong><br>
+            ${item.productCode || 'N/A'}
           </div>
-          ${item.productCode ? `
-            <div style="margin-bottom:15px;">
-              <strong style="color:#5e3a8e;">Product Code:</strong><br>
-              ${item.productCode}
-            </div>
-          ` : ''}
           ${item.productLink ? `
             <div style="margin-bottom:15px;">
               <strong style="color:#5e3a8e;">Product Link:</strong><br>
@@ -1417,16 +1449,10 @@
               ${item.submittedBy}
             </div>
           ` : ''}
-          ${item.promotionIdea ? `
-            <div style="margin-bottom:15px;">
-              <strong style="color:#5e3a8e;">Promotion Idea:</strong><br>
-              ${item.promotionIdea}
-            </div>
-          ` : ''}
           <div style="margin-bottom:15px;">
             <strong style="color:#5e3a8e;">Studio Status:</strong><br>
-            <span class="badge badge-${item.studioStatus === 'completed' ? 'approved' : 'pending'}">
-              ${item.studioStatus ? item.studioStatus.toUpperCase() : 'PENDING'}
+            <span class="badge badge-${currentStatus === 'completed' ? 'approved' : currentStatus === 'working' ? 'warning' : 'new'}">
+              ${currentStatus.toUpperCase()}
             </span>
           </div>
           ${item.studioLink ? `
@@ -1436,34 +1462,46 @@
             </div>
           ` : ''}
         </div>
-      `;
 
-      if (item.studioId && item.status === 'booked') {
-        detailsHTML += `
-          <div style="margin-top:20px;">
-            <h4 style="color:#5e3a8e;margin-bottom:15px;">✅ Mark as Completed</h4>
+        <div style="margin-top:20px;">
+          <h4 style="color:#5e3a8e;margin-bottom:15px;">Update Status</h4>
+          <div class="action-btns" style="margin-bottom:20px;">
+            ${currentStatus !== 'working' ? `<button class="btn btn-warning" onclick="updateStudioStatus(${item.studioId || item.id}, 'working')">Mark as Working</button>` : ''}
+            ${currentStatus !== 'completed' ? `<button class="btn btn-success" onclick="updateStudioStatus(${item.studioId || item.id}, 'completed')">Mark as Completed</button>` : ''}
+          </div>
+
+          ${currentStatus === 'completed' || currentStatus === 'working' ? `
             <div class="form-group">
               <label>Content Link (Drive/Cloud)</label>
-              <input type="url" id="contentLinkInput" placeholder="https://drive.google.com/..." style="width:100%;">
+              <input type="url" id="contentLinkInput" placeholder="https://drive.google.com/..." value="${item.studioLink || ''}" style="width:100%;">
             </div>
-            <button class="btn btn-success" onclick="markStudioComplete(${item.studioId})" style="width:100%;">
-              ✓ Mark as Completed
+            <button class="btn btn-info" onclick="submitContentLink(${item.studioId || item.id})" style="width:100%;">
+              Submit Link
             </button>
-          </div>
-        `;
-      } else if (item.status === 'empty') {
-        detailsHTML += `
-          <div style="background:#FFF3E0;padding:15px;border-radius:12px;border-left:4px solid #F57C00;">
-            <strong style="color:#E65100;">📌 Note:</strong><br>
-            <div style="color:#666;margin-top:8px;">This slot is empty. Content team should create content for this slot based on the ${item.category || 'assigned category'}.</div>
-          </div>
-        `;
-      }
+          ` : ''}
+        </div>
+      `;
 
       showModal(detailsHTML);
     }
 
-    async function markStudioComplete(studioId) {
+    async function updateStudioStatus(studioId, status) {
+      try {
+        showLoading();
+        await updateStudioCompletion(studioId, {
+          completion_status: status
+        });
+        hideLoading();
+        closeModal();
+        alert(`✅ Status updated to: ${status.toUpperCase()}`);
+        loadStudioCalendar();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function submitContentLink(studioId) {
       const contentLink = document.getElementById('contentLinkInput').value;
       if (!contentLink) {
         alert('Please enter content link');
@@ -1473,12 +1511,11 @@
       try {
         showLoading();
         await updateStudioCompletion(studioId, {
-          completion_status: 'completed',
           content_link: contentLink
         });
         hideLoading();
         closeModal();
-        alert('✅ Marked as completed!');
+        alert('✅ Content link submitted!');
         loadStudioCalendar();
       } catch (error) {
         hideLoading();
@@ -1496,10 +1533,6 @@
         currentStudioYear--;
       }
       loadStudioCalendar();
-    }
-
-    function openAddExtraContentModal() {
-      alert('Add extra content feature (coming soon)');
     }
   </script>
 </body>
