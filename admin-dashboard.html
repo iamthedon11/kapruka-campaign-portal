@@ -3,1938 +3,1035 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Kapruka</title>
+  <title>Admin Dashboard - Kapruka Campaign Portal</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="js/supabase-api.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 20px;
     }
-    .container { max-width: 1800px; margin: 0 auto; }
+
     .header {
-      text-align: center;
-      margin-bottom: 50px;
-    }
-    .kapruka-logo {
-      width: 120px;
-      height: 120px;
-      margin: 0 auto 30px;
-      border-radius: 50%;
-      overflow: hidden;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    .kapruka-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 48px;
-      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 16px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-    .login-card {
-      background: rgba(255,255,255,0.98);
-      padding: 50px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      max-width: 450px;
-      margin: 0 auto;
-    }
-    .login-card h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
+      background: linear-gradient(135deg, #422B73 0%, #5e3a8e 100%);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
       margin-bottom: 30px;
       text-align: center;
     }
-    .admin-content { display: none; }
+
+    .header h1 {
+      color: #FFD700;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #fff;
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
+
     .tab-btn {
       padding: 15px 30px;
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,215,0,0.3);
+      border-radius: 10px;
+      color: #fff;
       cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 16px;
       transition: all 0.3s;
     }
+
     .tab-btn:hover {
       background: rgba(255,215,0,0.2);
-      border-color: #FFD700;
+      transform: translateY(-2px);
     }
+
     .tab-btn.active {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-color: #FFD700;
-      box-shadow: 0 8px 25px rgba(255,215,0,0.3);
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #1a0b2e;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(255,215,0,0.4);
     }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     .card {
-      background: rgba(255,255,255,0.98);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      margin-bottom: 30px;
-    }
-    .card h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       margin-bottom: 20px;
     }
-    .form-group { margin-bottom: 20px; }
-    label {
-      display: block;
-      color: #5e3a8e;
-      font-weight: 600;
-      margin-bottom: 10px;
-      font-size: 14px;
+
+    .card h2 {
+      color: #422B73;
+      margin-bottom: 20px;
+      font-size: 1.8em;
     }
-    input, select, textarea {
-      width: 100%;
-      padding: 16px;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #FFD700;
-    }
-    .btn {
-      padding: 15px 30px;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-    }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(94,58,142,0.4);
-    }
-    .btn-warning {
-      background: linear-gradient(135deg, #FFA726, #F57C00);
-      color: white;
-    }
-    .btn-success {
-      background: linear-gradient(135deg, #66BB6A, #43A047);
-      color: white;
-    }
-    .btn-danger {
-      background: linear-gradient(135deg, #EF5350, #E53935);
-      color: white;
-    }
-    .btn-complete {
-      background: linear-gradient(135deg, #9E9E9E, #757575);
-      color: white;
-    }
-    .table-container {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
+      margin-top: 20px;
     }
+
     th {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
+      background: linear-gradient(135deg, #422B73, #5e3a8e);
+      color: #FFD700;
       padding: 15px;
       text-align: left;
       font-weight: 600;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
+
     td {
-      padding: 15px;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 14px;
+      padding: 12px 15px;
+      border-bottom: 1px solid #ddd;
     }
+
     tr:hover {
-      background: #f9f9f9;
+      background: rgba(66,43,115,0.05);
     }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
+
+    .status-badge {
+      padding: 5px 12px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 0.85em;
       font-weight: 600;
-      text-transform: uppercase;
     }
-    .badge-submitted { background: #E1BEE7; color: #4A148C; }
-    .badge-working { background: #FFF9C4; color: #F57F17; }
-    .badge-live { background: #C8E6C9; color: #1B5E20; }
-    .badge-completed { background: #E0E0E0; color: #424242; }
-    .badge-rejected { background: #FFCDD2; color: #C62828; }
-    .badge-pending { background: #FFF9C4; color: #F57F17; }
-    .badge-approved { background: #C8E6C9; color: #1B5E20; }
-    .badge-received { background: #E3F2FD; color: #1565C0; }
-    .badge-review { background: #FFF3E0; color: #E65100; }
-    .action-btns {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+
+    .status-pending { background: #FFF3CD; color: #856404; }
+    .status-approved { background: #D4EDDA; color: #155724; }
+    .status-rejected { background: #F8D7DA; color: #721C24; }
+    .status-working { background: #D1ECF1; color: #0C5460; }
+    .status-live { background: #CCE5FF; color: #004085; }
+    .status-completed { background: #C3E6CB; color: #155724; }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      margin: 2px;
     }
-    .action-btns button {
-      padding: 8px 15px;
-      font-size: 12px;
-    }
-    .loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 5px solid rgba(255,215,0,0.3);
-      border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      padding: 20px;
-    }
-    .modal-content {
-      background: white;
-      padding: 40px;
-      border-radius: 24px;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
-    }
-    .modal h3 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 24px;
+
+    .btn-approve { background: #28a745; color: white; }
+    .btn-reject { background: #dc3545; color: white; }
+    .btn-edit { background: #ffc107; color: #000; }
+    .btn-delete { background: #6c757d; color: white; }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+
+    .form-group {
       margin-bottom: 20px;
     }
-    .close-modal {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      font-size: 32px;
-      cursor: pointer;
-      color: #999;
-      line-height: 1;
-    }
-    .close-modal:hover { color: #333; }
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-    }
-    .checkbox-label input {
-      width: auto;
-      padding: 0;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    .stat-card {
-      padding: 20px;
-      border-radius: 12px;
-    }
-    .radio-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .radio-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      padding: 10px;
-      border: 2px solid #e8e8e8;
-      border-radius: 8px;
-      transition: all 0.3s;
-    }
-    .radio-label:hover {
-      border-color: #FFD700;
-      background: #fffef0;
-    }
-    .radio-label input {
-      width: auto;
-      padding: 0;
-    }
 
-    /* NEW STUDIO CALENDAR VERTICAL VIEW STYLES */
-    .studio-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-    .studio-stat-card {
-      padding: 18px;
-      border-radius: 12px;
-      text-align: center;
-    }
-    .studio-stat-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
+    .form-group label {
+      display: block;
       margin-bottom: 8px;
-      opacity: 0.8;
-    }
-    .studio-stat-value {
-      font-size: 28px;
-      font-weight: 700;
+      color: #422B73;
+      font-weight: 600;
     }
 
-    .studio-day-section {
-      background: white;
-      border-radius: 16px;
-      margin-bottom: 25px;
-      overflow: hidden;
-      border: 2px solid #e8e8e8;
-    }
-    .studio-day-header {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-      padding: 18px 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .studio-day-title {
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .studio-day-date {
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
       font-size: 14px;
-      opacity: 0.9;
+      transition: border 0.3s;
     }
-    .studio-day-slots {
-      padding: 20px;
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #422B73;
     }
-    .studio-slot-item {
-      background: #f9f9f9;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      border-left: 4px solid #e8e8e8;
+
+    .submit-btn {
+      background: linear-gradient(135deg, #422B73, #5e3a8e);
+      color: #FFD700;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
       transition: all 0.3s;
-    }
-    .studio-slot-item:hover {
-      background: #fff;
-      border-left-color: #5e3a8e;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
-    .studio-slot-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .studio-slot-title {
-      font-weight: 700;
-      color: #5e3a8e;
-      font-size: 15px;
-    }
-    .studio-slot-badges {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .studio-slot-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .badge-empty { background: #F5F5F5; color: #757575; }
-    .badge-user-booked { background: #E3F2FD; color: #1565C0; }
-    .badge-admin-approved { background: #E8F5E9; color: #2E7D32; }
-    .badge-studio-received { background: #FFF3E0; color: #E65100; }
-    .badge-studio-working { background: #FFF9C4; color: #F57F17; }
-    .badge-studio-review { background: #FFE0B2; color: #EF6C00; }
-    .badge-studio-approved { background: #C8E6C9; color: #1B5E20; }
-
-    .studio-slot-details {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
-      font-size: 13px;
-    }
-    .studio-slot-label {
-      font-weight: 600;
-      color: #666;
-    }
-    .studio-slot-value {
-      color: #333;
-    }
-    .studio-slot-actions {
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid #e8e8e8;
-      display: flex;
-      gap: 10px;
-    }
-    .studio-slot-actions select {
-      padding: 10px;
-      font-size: 13px;
-      flex: 1;
-    }
-    .studio-slot-actions button {
-      padding: 10px 20px;
-      font-size: 13px;
-      font-weight: 600;
+      width: 100%;
     }
 
-    .slot-link {
-      color: #5e3a8e;
-      text-decoration: none;
-      word-break: break-all;
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(66,43,115,0.4);
     }
-    .slot-link:hover {
-      text-decoration: underline;
+
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
     }
+
+    .alert-success { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+    .alert-error { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: white;
+      margin: 5% auto;
+      padding: 30px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      color: #999;
+      cursor: pointer;
+    }
+
+    .close:hover { color: #422B73; }
 
     @media (max-width: 768px) {
-      h1 { font-size: 32px; }
+      .header h1 { font-size: 1.8em; }
       .tabs { flex-direction: column; }
-      .tab-btn { width: 100%; }
       table { font-size: 12px; }
-      th, td { padding: 10px; }
-      .studio-slot-details {
-        grid-template-columns: 1fr;
-      }
+      th, td { padding: 8px; }
     }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
+
+  <div class="header">
+    <h1>⚙️ Admin Dashboard</h1>
+    <p>Manage Campaigns, Products, Content & Studio Calendar</p>
   </div>
 
-  <div class="container">
-    <div class="header">
-      <div class="kapruka-logo">
-        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
-      </div>
-      <h1>Admin Dashboard</h1>
-      <p class="subtitle">Campaign Management</p>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('requests')">📋 Campaign Requests</button>
+    <button class="tab-btn" onclick="showTab('products')">🛍️ Product Suggestions</button>
+    <button class="tab-btn" onclick="showTab('departments')">🏢 Department Config</button>
+    <button class="tab-btn" onclick="showTab('content')">📅 Content Calendar</button>
+    <button class="tab-btn" onclick="showTab('themes')">🎨 Themes</button>
+    <button class="tab-btn" onclick="showTab('studio')">🎬 Studio Calendar</button>
+  </div>
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-card">
-      <h2>🔐 Admin Login</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="adminPassword" required placeholder="Enter admin password">
+  <!-- Campaign Requests Tab -->
+  <div id="tab-requests" class="tab-content active">
+    <div class="card">
+      <h2>📋 Campaign Requests</h2>
+      <div id="requestsTable"></div>
+    </div>
+  </div>
+
+  <!-- Product Suggestions Tab -->
+  <div id="tab-products" class="tab-content">
+    <div class="card">
+      <h2>🛍️ Product Suggestions</h2>
+      <div id="productsTable"></div>
+    </div>
+  </div>
+
+  <!-- Department Config Tab -->
+  <div id="tab-departments" class="tab-content">
+    <div class="card">
+      <h2>➕ Add Department Configuration</h2>
+      <form id="deptForm">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+          <div class="form-group">
+            <label>Month</label>
+            <input type="text" id="month" placeholder="e.g., January 2026" required>
+          </div>
+          <div class="form-group">
+            <label>Department Name</label>
+            <input type="text" id="department" placeholder="e.g., Marketing" required>
+          </div>
+          <div class="form-group">
+            <label>Budget (LKR)</label>
+            <input type="number" id="budget" placeholder="e.g., 500000" required>
+          </div>
+          <div class="form-group">
+            <label>Number of Slots</label>
+            <input type="number" id="slots" min="1" required>
+          </div>
+          <div class="form-group">
+            <label>Card Color (Hex)</label>
+            <input type="text" id="color" placeholder="#E8F5E9" value="#E8F5E9">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="active">
+              <option value="Yes">Active</option>
+              <option value="No">Inactive</option>
+            </select>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
+        <button type="submit" class="submit-btn">➕ Add Department</button>
       </form>
     </div>
 
-    <!-- Admin Content -->
-    <div id="adminContent" class="admin-content">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
-        <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
-        <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
-        <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
-        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
-        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
-        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
-      </div>
-
-      <!-- Campaign Requests Tab -->
-      <div id="tab-requests" class="tab-content active">
-        <div class="card">
-          <h2>📋 Campaign Requests</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Request ID</th>
-                  <th>Date</th>
-                  <th>Department</th>
-                  <th>Month</th>
-                  <th>Slot</th>
-                  <th>Campaign</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="requestsTable">
-                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Product Suggestions Tab -->
-      <div id="tab-products" class="tab-content">
-        <div class="card">
-          <h2>💡 Product Suggestions</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Submission ID</th>
-                  <th>Date</th>
-                  <th>Product Link</th>
-                  <th>Category</th>
-                  <th>Margin %</th>
-                  <th>Status</th>
-                  <th>Page Name</th>
-                  <th>Go Live Date</th>
-                  <th>Slot</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="productsTable">
-                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Content Calendar Tab -->
-      <div id="tab-content" class="tab-content">
-        <div class="card">
-          <h2>📅 Add Content Theme</h2>
-          <form id="themeForm">
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Theme Name</label>
-                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
-              </div>
-              <div class="form-group">
-                <label>Slots Per Day</label>
-                <input type="number" id="slotsPerDay" required placeholder="e.g., 3" min="1" max="10" value="3">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Start Date</label>
-                <input type="date" id="themeStart" required>
-              </div>
-              <div class="form-group">
-                <label>End Date</label>
-                <input type="date" id="themeEnd" required>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Theme Color</label>
-                <input type="color" id="themeColor" value="#422B73">
-              </div>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="isSeasonal">
-                  <span>Seasonal Theme (no categories)</span>
-                </label>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Theme</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>🗂️ Content Bookings</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Slot</th>
-                  <th>Category</th>
-                  <th>Product Code</th>
-                  <th>Status</th>
-                  <th>Go Live</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="contentTable">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🎨 Themes</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Theme</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Slots/Day</th>
-                  <th>Type</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="themesTable">
-                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- STUDIO CALENDAR TAB - NEW VERTICAL VIEW -->
-      <div id="tab-studio" class="tab-content">
-        <div class="card">
-          <h2 style="margin-bottom:25px;">🎬 Studio Calendar - Vertical View</h2>
-
-          <div class="studio-stats" id="studioStats">
-            <!-- Stats will be loaded here -->
-          </div>
-
-          <div style="margin-bottom:20px;display:flex;gap:15px;align-items:center;">
-            <button class="btn btn-primary" onclick="changeStudioDateRange(-7)">← Previous Week</button>
-            <span id="studioDateRange" style="color:#5e3a8e;font-weight:700;font-size:16px;flex:1;text-align:center;">Loading...</span>
-            <button class="btn btn-primary" onclick="changeStudioDateRange(7)">Next Week →</button>
-          </div>
-
-          <div id="studioCalendarVertical">
-            <div style="text-align:center;padding:60px;color:#999;">
-              Loading studio calendar...
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- HOT PRODUCTS TAB -->
-      <div id="tab-hotproducts" class="tab-content">
-        <div class="card">
-          <h2>🔥 Hot Products Management</h2>
-          <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
-
-          <div class="stats-grid">
-            <div class="stat-card" style="background:#E8F5E9;">
-              <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
-              <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="adminTotalProducts">0</div>
-            </div>
-            <div class="stat-card" style="background:#E3F2FD;">
-              <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Listed Products</div>
-              <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="adminListedProducts">0</div>
-            </div>
-            <div class="stat-card" style="background:#FFF3E0;">
-              <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Categories</div>
-              <div style="color:#BF360C;font-size:32px;font-weight:700;" id="adminCategoryCount">0</div>
-            </div>
-          </div>
-
-          <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
-            <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
-            <form id="addHotProductForm" style="display:grid;gap:15px;">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Category</label>
-                  <select id="hotProductCategory" required style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                    <option value="">Select Category</option>
-                    <option value="Cakes">Cakes</option>
-                    <option value="Flowers">Flowers</option>
-                    <option value="Chocolates">Chocolates</option>
-                    <option value="Clothing">Clothing</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Food & Restaurants">Food & Restaurants</option>
-                    <option value="Fruits">Fruits</option>
-                    <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
-                    <option value="Grocery & Hampers">Grocery & Hampers</option>
-                    <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
-                    <option value="Sports and Bicycles">Sports and Bicycles</option>
-                    <option value="Mother and Baby">Mother and Baby</option>
-                    <option value="Jewellery and Watches">Jewellery and Watches</option>
-                    <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
-                    <option value="Customized Gifts">Customized Gifts</option>
-                    <option value="Health and Wellness">Health and Wellness</option>
-                    <option value="Home & Lifestyle">Home & Lifestyle</option>
-                    <option value="Combo and Gift Sets">Combo and Gift Sets</option>
-                    <option value="Books & Stationery">Books & Stationery</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Product Link</label>
-                  <input type="url" id="hotProductLink" required placeholder="https://example.com/product" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                </div>
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Sales Count</label>
-                  <input type="number" id="hotProductSales" value="0" min="0" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                </div>
-              </div>
-              <button type="submit" style="padding:14px 32px;background:linear-gradient(135deg,#5e3a8e,#3d2461);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.3s;">
-                ➕ Add Product
-              </button>
-            </form>
-          </div>
-
-          <div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
-            <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;flex:1;min-width:200px;">
-              <option value="">All Categories</option>
-              <option value="Cakes">Cakes</option>
-              <option value="Flowers">Flowers</option>
-              <option value="Chocolates">Chocolates</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-              <option value="Food & Restaurants">Food & Restaurants</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
-              <option value="Grocery & Hampers">Grocery & Hampers</option>
-              <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
-              <option value="Sports and Bicycles">Sports and Bicycles</option>
-              <option value="Mother and Baby">Mother and Baby</option>
-              <option value="Jewellery and Watches">Jewellery and Watches</option>
-              <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
-              <option value="Customized Gifts">Customized Gifts</option>
-              <option value="Health and Wellness">Health and Wellness</option>
-              <option value="Home & Lifestyle">Home & Lifestyle</option>
-              <option value="Combo and Gift Sets">Combo and Gift Sets</option>
-              <option value="Books & Stationery">Books & Stationery</option>
-            </select>
-            <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;min-width:150px;">
-              <option value="">All Status</option>
-              <option value="true">Listed Only</option>
-              <option value="false">Unlisted Only</option>
-            </select>
-            <button onclick="loadHotProducts()" style="padding:12px 24px;background:#5e3a8e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
-              🔄 Refresh
-            </button>
-          </div>
-
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;">
-              <thead>
-                <tr style="background:#5e3a8e;color:white;">
-                  <th style="padding:12px;text-align:left;">ID</th>
-                  <th style="padding:12px;text-align:left;">Category</th>
-                  <th style="padding:12px;text-align:left;">Product Link</th>
-                  <th style="padding:12px;text-align:center;">Sales</th>
-                  <th style="padding:12px;text-align:center;">Listed</th>
-                  <th style="padding:12px;text-align:left;">Kapruka Link</th>
-                  <th style="padding:12px;text-align:center;">Created</th>
-                  <th style="padding:12px;text-align:center;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="hotProductsTableBody">
-                <tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Department Config Tab -->
-      <div id="tab-departments" class="tab-content">
-        <div class="card">
-          <h2>🏢 Add Department</h2>
-          <form id="deptForm">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Month</label>
-                <select id="deptMonth" required>
-                  <option value="January 2026">January 2026</option>
-                  <option value="February 2026">February 2026</option>
-                  <option value="March 2026">March 2026</option>
-                  <option value="April 2026">April 2026</option>
-                  <option value="May 2026">May 2026</option>
-                  <option value="June 2026">June 2026</option>
-                  <option value="July 2026">July 2026</option>
-                  <option value="August 2026">August 2026</option>
-                  <option value="September 2026">September 2026</option>
-                  <option value="October 2026">October 2026</option>
-                  <option value="November 2026">November 2026</option>
-                  <option value="December 2026">December 2026</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Department Name</label>
-                <input type="text" id="deptName" required placeholder="e.g., Marketing">
-              </div>
-              <div class="form-group">
-                <label>Budget ($k)</label>
-                <input type="number" id="deptBudget" required placeholder="e.g., 200">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Slots</label>
-                <input type="number" id="deptSlots" required placeholder="e.g., 10">
-              </div>
-              <div class="form-group">
-                <label>Color</label>
-                <input type="color" id="deptColor" value="#E8F5E9">
-              </div>
-              <div class="form-group">
-                <label>Active</label>
-                <select id="deptActive">
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Department</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>📋 Existing Departments</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Department</th>
-                  <th>Budget</th>
-                  <th>Slots</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="deptsTable">
-                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+    <div class="card">
+      <h2>🏢 Existing Departments</h2>
+      <div id="departmentsTable"></div>
     </div>
   </div>
 
-  <script src="supabase-api.js"></script>
+  <!-- Content Calendar Tab -->
+  <div id="tab-content" class="tab-content">
+    <div class="card">
+      <h2>📅 Content Calendar Bookings</h2>
+      <div id="contentTable"></div>
+    </div>
+  </div>
+
+  <!-- Themes Tab -->
+  <div id="tab-themes" class="tab-content">
+    <div class="card">
+      <h2>🎨 Add New Theme</h2>
+      <form id="themeForm">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+          <div class="form-group">
+            <label>Theme Name</label>
+            <input type="text" id="themeName" placeholder="e.g., Valentine's Day 2026" required>
+          </div>
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" id="startDate" required>
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" id="endDate" required>
+          </div>
+          <div class="form-group">
+            <label>Slots Per Day</label>
+            <input type="number" id="slotsPerDay" min="1" max="10" value="3" required>
+          </div>
+          <div class="form-group">
+            <label>Theme Color</label>
+            <input type="color" id="themeColor" value="#422B73">
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="isSeasonal">
+              <option value="false">Daily Post (Random Categories)</option>
+              <option value="true">Seasonal Theme (Any Category)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="submit-btn">🎨 Create Theme</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>📋 Existing Themes</h2>
+      <div id="themesTable"></div>
+    </div>
+  </div>
+
+  <!-- Studio Calendar Tab -->
+  <div id="tab-studio" class="tab-content">
+    <div class="card">
+      <h2>🎬 Studio Calendar</h2>
+      <div style="margin-bottom:20px;">
+        <label style="color:#422B73;font-weight:600;margin-right:10px;">Select Month:</label>
+        <select id="studioMonthSelect" onchange="loadStudioCalendar()" style="padding:10px;border-radius:5px;border:2px solid #ddd;">
+          <option value="1">January 2026</option>
+          <option value="2">February 2026</option>
+          <option value="3">March 2026</option>
+          <option value="4">April 2026</option>
+          <option value="5">May 2026</option>
+          <option value="6">June 2026</option>
+          <option value="7">July 2026</option>
+          <option value="8">August 2026</option>
+          <option value="9">September 2026</option>
+          <option value="10">October 2026</option>
+          <option value="11">November 2026</option>
+          <option value="12">December 2026</option>
+        </select>
+      </div>
+      <div id="studioCalendarView"></div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="reviewModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+      <h2 style="color:#422B73;margin-bottom:20px;">Review Request</h2>
+      <div id="reviewForm"></div>
+    </div>
+  </div>
+
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('productModal')">&times;</span>
+      <h2 style="color:#422B73;margin-bottom:20px;">Review Product</h2>
+      <div id="productForm"></div>
+    </div>
+  </div>
+
+  <div id="contentModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('contentModal')">&times;</span>
+      <h2 style="color:#422B73;margin-bottom:20px;">Review Content Booking</h2>
+      <div id="contentForm"></div>
+    </div>
+  </div>
+
+  <div id="studioModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('studioModal')">&times;</span>
+      <h2 style="color:#422B73;margin-bottom:20px;">Update Studio Status</h2>
+      <div id="studioForm"></div>
+    </div>
+  </div>
+
   <script>
-    let isLoggedIn = false;
-    let allHotProducts = [];
-    let studioStartDate = new Date();
-    studioStartDate.setDate(studioStartDate.getDate() - (studioStartDate.getDay() || 7));
-    let studioEndDate = new Date(studioStartDate);
-    studioEndDate.setDate(studioEndDate.getDate() + 6);
-
-    const PAGE_NAMES = [
-      'Kapruka FB Leads',
-      'Social Mart',
-      'Electronic Factory',
-      'Fashion Factory',
-      'Toys Factory',
-      'Handbag Factory'
-    ];
-
-    function showLoading() {
-      document.getElementById('loading').style.display = 'flex';
-    }
-
-    function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
-    }
-
-    function showModal(content) {
-      document.getElementById('modalContent').innerHTML = content;
-      document.getElementById('modal').style.display = 'flex';
-    }
-
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-    }
-
-    // Login
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const password = document.getElementById('adminPassword').value;
-
-      if (verifyAdminPassword(password)) {
-        isLoggedIn = true;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        loadAllData();
-      } else {
-        alert('Invalid password');
-      }
-    });
-
-    function logout() {
-      isLoggedIn = false;
-      document.getElementById('loginScreen').style.display = 'block';
-      document.getElementById('adminContent').style.display = 'none';
-      document.getElementById('adminPassword').value = '';
-    }
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    // Tab switching
+    function showTab(tabName) {
+      const tabs = document.querySelectorAll('.tab-content');
+      const btns = document.querySelectorAll('.tab-btn');
+      
+      tabs.forEach(tab => tab.classList.remove('active'));
+      btns.forEach(btn => btn.classList.remove('active'));
+      
+      document.getElementById(`tab-${tabName}`).classList.add('active');
       event.target.classList.add('active');
-      document.getElementById('tab-' + tab).classList.add('active');
-
-      if (tab === 'content') {
-        loadContentData();
-      } else if (tab === 'hotproducts') {
-        loadHotProducts();
-      } else if (tab === 'studio') {
-        loadStudioCalendar();
-      }
+      
+      if (tabName === 'requests') loadRequests();
+      if (tabName === 'products') loadProducts();
+      if (tabName === 'departments') loadDepartments();
+      if (tabName === 'content') loadContentBookings();
+      if (tabName === 'themes') loadThemes();
+      if (tabName === 'studio') loadStudioCalendar();
     }
 
-    async function loadAllData() {
-      loadRequests();
-      loadProducts();
-      loadDepartments();
+    // Close modal
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // CAMPAIGN REQUESTS
-    // ═══════════════════════════════════════════════════════════
+    // Load Campaign Requests
     async function loadRequests() {
       try {
         const requests = await getAllRequests();
-        const tbody = document.getElementById('requestsTable');
-
-        if (requests.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = requests.map(r => {
-          let badgeClass = 'badge-working';
-          if (r.status === 'Live') badgeClass = 'badge-live';
-          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
-          if (r.status === 'Completed') badgeClass = 'badge-completed';
-
-          return `
-            <tr>
-              <td>${r.requestId}</td>
-              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
-              <td>${r.department}</td>
-              <td>${r.month}</td>
-              <td>${r.slot}</td>
-              <td>${r.campaign}</td>
-              <td><span class="badge ${badgeClass}">${r.status}</span></td>
-              <td>
-                <div class="action-btns">
-                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
-                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
-                  <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
-                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        let html = '<table><thead><tr><th>Request ID</th><th>Name</th><th>Department</th><th>Month</th><th>Slot</th><th>Campaign</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        
+        requests.forEach(req => {
+          const statusClass = req.status.toLowerCase().replace(' ', '-');
+          html += `<tr>
+            <td>${req.requestId}</td>
+            <td>${req.name}</td>
+            <td>${req.department}</td>
+            <td>${req.month}</td>
+            <td>${req.slot}</td>
+            <td>${req.campaign}</td>
+            <td>${req.duration} days</td>
+            <td><span class="status-badge status-${statusClass}">${req.status}</span></td>
+            <td><button class="btn btn-edit" onclick="reviewRequest(${req.row}, '${req.requestId}', '${req.status}')">Review</button></td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('requestsTable').innerHTML = html;
       } catch (error) {
-        document.getElementById('requestsTable').innerHTML = 
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+        console.error('Error loading requests:', error);
       }
     }
 
-    async function updateStatus(row, status) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
+    // Review Request Modal
+    function reviewRequest(row, requestId, currentStatus) {
+      const modal = document.getElementById('reviewModal');
+      modal.style.display = 'block';
+      
+      document.getElementById('reviewForm').innerHTML = `
+        <p><strong>Request ID:</strong> ${requestId}</p>
+        <p><strong>Current Status:</strong> <span class="status-badge status-${currentStatus.toLowerCase().replace(' ', '-')}">${currentStatus}</span></p>
+        <div class="form-group">
+          <label>New Status</label>
+          <select id="newStatus">
+            <option value="Request Submitted">Request Submitted</option>
+            <option value="Working">Working</option>
+            <option value="Live">Live</option>
+            <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reviewer Name</label>
+          <input type="text" id="reviewer" placeholder="Your name" required>
+        </div>
+        <div class="form-group">
+          <label>Comments</label>
+          <textarea id="comments" rows="3" placeholder="Optional notes"></textarea>
+        </div>
+        <button class="submit-btn" onclick="updateRequest(${row})">Update Status</button>
+      `;
+    }
 
-      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
-
+    async function updateRequest(row) {
+      const status = document.getElementById('newStatus').value;
+      const reviewer = document.getElementById('reviewer').value;
+      const comments = document.getElementById('comments').value;
+      
+      if (!reviewer) {
+        alert('Please enter your name');
+        return;
+      }
+      
       try {
-        showLoading();
-        await updateRequestStatus(row, status, reviewer, comments || '');
-        hideLoading();
-        alert(`Status updated to: ${status}`);
+        await updateRequestStatus(row, status, reviewer, comments);
+        alert('✅ Status updated successfully!');
+        closeModal('reviewModal');
         loadRequests();
       } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // PRODUCT SUGGESTIONS WITH SLOT AVAILABILITY
-    // ═══════════════════════════════════════════════════════════
-    async function loadProducts() {
-      try {
-        const products = await getAllProductSuggestions();
-        const tbody = document.getElementById('productsTable');
-
-        if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No products yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = products.map(p => {
-          let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
-                          p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-
-          const actions = p.status === 'Approved' 
-            ? `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`
-            : `
-              <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
-              <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
-            `;
-
-          return `
-            <tr>
-              <td>${p.submissionId}</td>
-              <td>${new Date(p.timestamp).toLocaleDateString()}</td>
-              <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
-              <td>${p.category}</td>
-              <td>${p.margin}%</td>
-              <td><span class="badge ${badgeClass}">${p.status}</span></td>
-              <td>${p.assignedPage || '-'}</td>
-              <td>${p.goLiveDate || '-'}</td>
-              <td>${p.slotNumber || '-'}</td>
-              <td>
-                <div class="action-btns">
-                  ${actions}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (error) {
-        document.getElementById('productsTable').innerHTML = 
-          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function reviewProduct(row, status) {
-      const reviewerName = prompt('Enter your name:');
-      if (!reviewerName) return;
-
-      if (status === 'Approved') {
-        showApprovalModalWithSlots(row, reviewerName);
-      } else {
-        const rejectionReason = prompt('Rejection Reason:');
-        if (!rejectionReason) return;
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Rejected',
-            reviewerName,
-            rejectionReason
-          });
-          hideLoading();
-          alert('Product rejected!');
-          loadProducts();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      }
-    }
-
-    async function showApprovalModalWithSlots(row, reviewerName) {
-      showLoading();
-
-      // Create page selection first
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="pageName" value="${page}" required onchange="loadAvailableSlots('${page}')">
-          <span>${page}</span>
-        </label>
-      `).join('');
-
-      hideLoading();
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✅ Approve Product</h3>
-        <form id="approvalForm">
-          <div class="form-group">
-            <label>Select Page</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-          <div class="form-group" id="slotSelectionGroup" style="display:none;">
-            <label>Available Slots (Next 2 Weeks)</label>
-            <select id="slotSelection" required style="padding:12px;font-size:14px;">
-              <option value="">Select an available slot</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      // Make loadAvailableSlots globally accessible
-      window.loadAvailableSlots = async function(pageName) {
-        try {
-          showLoading();
-          const slotsData = await getAvailableSlotsForPage(pageName);
-          hideLoading();
-
-          const slotSelect = document.getElementById('slotSelection');
-          const slotGroup = document.getElementById('slotSelectionGroup');
-
-          if (slotsData.slots.length === 0) {
-            slotSelect.innerHTML = '<option value="">No available slots for next 2 weeks</option>';
-            alert(`No available slots for ${pageName} in the next 2 weeks`);
-          } else {
-            slotSelect.innerHTML = '<option value="">Select an available slot</option>' +
-              slotsData.slots.map(slot => 
-                `<option value="${slot.date}|${slot.slotNumber}">${slot.displayLabel}</option>`
-              ).join('');
-          }
-
-          slotGroup.style.display = 'block';
-        } catch (error) {
-          hideLoading();
-          alert('Error loading slots: ' + error.message);
-        }
-      };
-
-      document.getElementById('approvalForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-        const slotValue = document.getElementById('slotSelection').value;
-
-        if (!assignedPage) {
-          alert('Please select a page');
-          return;
-        }
-
-        if (!slotValue) {
-          alert('Please select an available slot');
-          return;
-        }
-
-        const [goLiveDate, slotNumber] = slotValue.split('|');
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Approved',
-            reviewerName,
-            assignedPage,
-            goLiveDate,
-            slotNumber: parseInt(slotNumber)
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Product approved and assigned to slot!');
-          loadProducts();
-          // Refresh studio calendar if on that tab
-          if (document.getElementById('tab-studio').classList.contains('active')) {
-            loadStudioCalendar();
-          }
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function editProduct(row) {
-      const products = await getAllProductSuggestions();
-      const product = products.find(p => p.row === row);
-
-      if (!product) {
-        alert('Product not found');
-        return;
-      }
-
-      showApprovalModalWithSlots(row, product.reviewerName);
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('themeForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const themeData = {
-        themeName: document.getElementById('themeName').value,
-        startDate: document.getElementById('themeStart').value,
-        endDate: document.getElementById('themeEnd').value,
-        slotsPerDay: document.getElementById('slotsPerDay').value,
-        themeColor: document.getElementById('themeColor').value,
-        isSeasonal: document.getElementById('isSeasonal').checked
-      };
-
-      try {
-        showLoading();
-        await addTheme(themeData);
-        hideLoading();
-        alert('✅ Theme added successfully!');
-        document.getElementById('themeForm').reset();
-        loadContentData();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    });
-
-    async function loadContentData() {
-      loadContentBookings();
-      loadThemes();
-    }
-
-    async function loadContentBookings() {
-      try {
-        const bookings = await getAllContentBookings();
-        const tbody = document.getElementById('contentTable');
-
-        if (bookings.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = bookings.map(b => {
-          let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
-                          b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-
-          return `
-            <tr>
-              <td>${b.date}</td>
-              <td>${b.slotNumber}</td>
-              <td>${b.category}</td>
-              <td>${b.productCode}</td>
-              <td><span class="badge ${badgeClass}">${b.status}</span></td>
-              <td>${b.goLiveDate || '-'}</td>
-              <td>
-                <div class="action-btns">
-                  ${b.status === 'Pending' ? `
-                    <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
-                    <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
-                  ` : b.status === 'Approved' ? `
-                    <button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>
-                  ` : ''}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (error) {
-        document.getElementById('contentTable').innerHTML = 
-          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function approveContent(id) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✅ Approve Content Booking</h3>
-        <form id="approveContentForm">
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="contentGoLiveDate" required>
-          </div>
-          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('approveContentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const goLiveDate = document.getElementById('contentGoLiveDate').value;
-
-        try {
-          showLoading();
-          await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
-          hideLoading();
-          closeModal();
-          alert('✅ Content approved!');
-          loadContentBookings();
-          if (document.getElementById('tab-studio').classList.contains('active')) {
-            loadStudioCalendar();
-          }
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function rejectContent(id) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
-
-      const rejectionReason = prompt('Rejection reason:');
-
-      try {
-        showLoading();
-        await updateContentBooking(id, { status: 'Rejected', reviewer, rejectionReason });
-        hideLoading();
-        alert('Content rejected!');
-        loadContentBookings();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function editContentBooking(id) {
-      const bookings = await getAllContentBookings();
-      const booking = bookings.find(b => b.id === id);
-
-      if (!booking) {
-        alert('Booking not found');
-        return;
-      }
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✏️ Edit Content Booking</h3>
-        <form id="editBookingForm">
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="editBookingDate" value="${booking.goLiveDate || ''}" required>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const goLiveDate = document.getElementById('editBookingDate').value;
-
-        try {
-          showLoading();
-          await updateContentBooking(id, {
-            status: 'Approved',
-            reviewer: booking.reviewer,
-            goLiveDate
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Booking updated!');
-          loadContentBookings();
-          if (document.getElementById('tab-studio').classList.contains('active')) {
-            loadStudioCalendar();
-          }
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function loadThemes() {
-      try {
-        const themes = await getAllThemes();
-        const tbody = document.getElementById('themesTable');
-
-        if (themes.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = themes.map(t => `
-          <tr>
-            <td>${t.theme_name}</td>
-            <td>${t.start_date}</td>
-            <td>${t.end_date}</td>
-            <td>${t.slots_per_day}</td>
-            <td>${t.is_seasonal ? 'Seasonal' : 'Daily Post'}</td>
-            <td>
-              <button class="btn btn-danger" onclick="removeTheme(${t.id})">Delete</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (error) {
-        document.getElementById('themesTable').innerHTML = 
-          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function removeTheme(id) {
-      if (!confirm('⚠️ Delete this theme?')) return;
-
-      try {
-        showLoading();
-        const result = await deleteTheme(id);
-        hideLoading();
-
-        if (result.slotsDeleted > 0) {
-          alert(`✅ Theme deleted successfully!\n\n${result.slotsDeleted} category slots were also removed.`);
-        } else {
-          alert('✅ Theme deleted successfully!');
-        }
-
-        loadThemes();
-        loadContentBookings();
-      } catch (error) {
-        hideLoading();
         alert('❌ Error: ' + error.message);
       }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // NEW STUDIO CALENDAR - VERTICAL VIEW
-    // ═══════════════════════════════════════════════════════════
-    async function loadStudioCalendar() {
+    // Load Product Suggestions
+    async function loadProducts() {
       try {
-        showLoading();
+        const products = await getAllProductSuggestions();
+        let html = '<table><thead><tr><th>ID</th><th>Name</th><th>Product Link</th><th>Category</th><th>Margin %</th><th>Qty</th><th>Status</th><th>Page</th><th>Slot</th><th>Actions</th></tr></thead><tbody>';
         
-        const startStr = studioStartDate.toISOString().split('T')[0];
-        const endStr = studioEndDate.toISOString().split('T')[0];
-
-        const calendarData = await getStudioCalendarVertical(startStr, endStr);
-        const stats = await getStudioCalendarStats(startStr, endStr);
-
-        // Update date range display
-        document.getElementById('studioDateRange').textContent = 
-          `${studioStartDate.toLocaleDateString()} - ${studioEndDate.toLocaleDateString()}`;
-
-        // Update stats
-        renderStudioStats(stats);
-
-        // Render calendar
-        renderStudioVertical(calendarData);
-
-        hideLoading();
+        products.forEach(p => {
+          const statusClass = p.status.toLowerCase();
+          const shortLink = p.productLink.substring(0, 40) + '...';
+          html += `<tr>
+            <td>${p.submissionId}</td>
+            <td>${p.name}</td>
+            <td><a href="${p.productLink}" target="_blank">${shortLink}</a></td>
+            <td>${p.category}</td>
+            <td>${p.margin}%</td>
+            <td>${p.availableQty}</td>
+            <td><span class="status-badge status-${statusClass}">${p.status}</span></td>
+            <td>${p.assignedPage || '-'}</td>
+            <td>${p.slotDate ? p.slotDate + ' #' + p.slotNumber : '-'}</td>
+            <td><button class="btn btn-edit" onclick="reviewProduct(${p.row}, '${p.submissionId}', '${p.status}')">Review</button></td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('productsTable').innerHTML = html;
       } catch (error) {
-        hideLoading();
-        document.getElementById('studioCalendarVertical').innerHTML = 
-          `<div style="text-align:center;padding:60px;color:#d32f2f;">Error: ${error.message}</div>`;
+        console.error('Error loading products:', error);
       }
     }
 
-    function renderStudioStats(stats) {
-      const statsHTML = `
-        <div class="studio-stat-card" style="background:#E8F5E9;">
-          <div class="studio-stat-label" style="color:#2E7D32;">Total Slots</div>
-          <div class="studio-stat-value" style="color:#1B5E20;">${stats.totalSlots}</div>
-        </div>
-        <div class="studio-stat-card" style="background:#FFF3E0;">
-          <div class="studio-stat-label" style="color:#E65100;">Empty Slots</div>
-          <div class="studio-stat-value" style="color:#BF360C;">${stats.emptySlots}</div>
-        </div>
-        <div class="studio-stat-card" style="background:#E3F2FD;">
-          <div class="studio-stat-label" style="color:#1565C0;">Pending Approval</div>
-          <div class="studio-stat-value" style="color:#0D47A1;">${stats.pendingApproval}</div>
-        </div>
-        <div class="studio-stat-card" style="background:#C8E6C9;">
-          <div class="studio-stat-label" style="color:#2E7D32;">Approved</div>
-          <div class="studio-stat-value" style="color:#1B5E20;">${stats.approved}</div>
-        </div>
-        <div class="studio-stat-card" style="background:#FFE0B2;">
-          <div class="studio-stat-label" style="color:#EF6C00;">Needs Review</div>
-          <div class="studio-stat-value" style="color:#E65100;">${stats.needsReview}</div>
-        </div>
-        <div class="studio-stat-card" style="background:#D1C4E9;">
-          <div class="studio-stat-label" style="color:#5E35B1;">Head Approved</div>
-          <div class="studio-stat-value" style="color:#4527A0;">${stats.contentHeadApproved}</div>
-        </div>
-      `;
+    // Review Product Modal
+    function reviewProduct(row, submissionId, currentStatus) {
+      const modal = document.getElementById('productModal');
+      modal.style.display = 'block';
       
-      document.getElementById('studioStats').innerHTML = statsHTML;
+      document.getElementById('productForm').innerHTML = `
+        <p><strong>Submission ID:</strong> ${submissionId}</p>
+        <p><strong>Current Status:</strong> <span class="status-badge status-${currentStatus.toLowerCase()}">${currentStatus}</span></p>
+        <div class="form-group">
+          <label>Decision</label>
+          <select id="productStatus" onchange="toggleSlotFields()">
+            <option value="Approved">✅ Approve</option>
+            <option value="Rejected">❌ Reject</option>
+          </select>
+        </div>
+        <div id="approvalFields">
+          <div class="form-group">
+            <label>Assign to Page</label>
+            <select id="assignedPage" onchange="loadPageSlots()">
+              <option value="">Select page...</option>
+              <option value="Kapruka FB Leads">Kapruka FB Leads (Monday)</option>
+              <option value="Social Mart">Social Mart (Tuesday)</option>
+              <option value="Electronic Factory">Electronic Factory (Wednesday)</option>
+              <option value="Fashion Factory">Fashion Factory (Thursday)</option>
+              <option value="Toys Factory">Toys Factory (Friday)</option>
+              <option value="Handbag Factory">Handbag Factory (Saturday)</option>
+            </select>
+          </div>
+          <div id="slotSelection" style="display:none;">
+            <div class="form-group">
+              <label>Available Slots (Next 2 Weeks)</label>
+              <div id="slotsList"></div>
+            </div>
+          </div>
+        </div>
+        <div id="rejectionFields" style="display:none;">
+          <div class="form-group">
+            <label>Rejection Reason</label>
+            <textarea id="rejectionReason" rows="3" required></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reviewer Name</label>
+          <input type="text" id="productReviewer" placeholder="Your name" required>
+        </div>
+        <button class="submit-btn" onclick="updateProduct(${row})">Submit Review</button>
+      `;
     }
 
-    function renderStudioVertical(data) {
-      const container = document.getElementById('studioCalendarVertical');
+    function toggleSlotFields() {
+      const status = document.getElementById('productStatus').value;
+      document.getElementById('approvalFields').style.display = status === 'Approved' ? 'block' : 'none';
+      document.getElementById('rejectionFields').style.display = status === 'Rejected' ? 'block' : 'none';
+    }
 
-      if (data.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:60px;color:#999;">No slots found for this date range</div>';
+    async function loadPageSlots() {
+      const pageName = document.getElementById('assignedPage').value;
+      if (!pageName) {
+        document.getElementById('slotSelection').style.display = 'none';
         return;
       }
 
-      const html = data.map(day => {
-        const slotsHTML = day.slots.map(slot => renderSlotItem(slot, day.date)).join('');
-
-        return `
-          <div class="studio-day-section">
-            <div class="studio-day-header">
-              <div>
-                <div class="studio-day-title">${day.dayOfWeek}</div>
-                <div class="studio-day-date">${day.date}</div>
-              </div>
-              <div style="font-size:14px;">${day.slots.length} Slots</div>
+      try {
+        const data = await getAvailableSlotsForPage(pageName);
+        let html = '<div style="max-height:200px;overflow-y:auto;">';
+        
+        data.slots.forEach(slot => {
+          const slotId = `slot-${slot.date}-${slot.slotNumber}`;
+          const disabled = !slot.available ? 'disabled' : '';
+          const label = slot.available ? '✅ Available' : `❌ ${slot.bookedBy}`;
+          
+          html += `
+            <div style="padding:10px;margin:5px 0;background:${slot.available ? '#d4edda' : '#f8d7da'};border-radius:5px;">
+              <label>
+                <input type="radio" name="selectedSlot" value="${slot.date}|${slot.slotNumber}" ${disabled}>
+                <strong>${slot.date}</strong> - Slot ${slot.slotNumber} - ${label}
+              </label>
             </div>
-            <div class="studio-day-slots">
-              ${slotsHTML}
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      container.innerHTML = html;
+          `;
+        });
+        
+        html += '</div>';
+        document.getElementById('slotsList').innerHTML = html;
+        document.getElementById('slotSelection').style.display = 'block';
+      } catch (error) {
+        alert('Error loading slots: ' + error.message);
+      }
     }
 
-    function renderSlotItem(slot, date) {
-      let slotTypeLabel = '';
-      let slotTypeColor = '#e8e8e8';
-
-      if (slot.slotType === 'content_calendar') {
-        slotTypeLabel = `📅 Daily Post #${slot.slotNumber}`;
-        slotTypeColor = '#5e3a8e';
-      } else if (slot.slotType === 'product_suggestion') {
-        slotTypeLabel = `💡 ${slot.pageName} - Slot ${slot.slotNumber}`;
-        slotTypeColor = '#2E7D32';
-      } else if (slot.slotType === 'tiktok') {
-        slotTypeLabel = `🎬 TikTok Video`;
-        slotTypeColor = '#E65100';
+    async function updateProduct(row) {
+      const status = document.getElementById('productStatus').value;
+      const reviewer = document.getElementById('productReviewer').value;
+      
+      if (!reviewer) {
+        alert('Please enter your name');
+        return;
       }
 
-      let badges = '';
+      const reviewData = { status, reviewerName: reviewer };
 
-      // Booking status badges
-      if (slot.bookingStatus === 'empty') {
-        badges += '<span class="studio-slot-badge badge-empty">Empty</span>';
-      } else if (slot.userBooked && !slot.adminApproved) {
-        badges += '<span class="studio-slot-badge badge-user-booked">User Booked</span>';
-      } else if (slot.adminApproved) {
-        badges += '<span class="studio-slot-badge badge-admin-approved">Admin Approved</span>';
+      if (status === 'Approved') {
+        const page = document.getElementById('assignedPage').value;
+        const selectedSlot = document.querySelector('input[name="selectedSlot"]:checked');
+        
+        if (!page) {
+          alert('Please select a page');
+          return;
+        }
+        
+        if (!selectedSlot) {
+          alert('Please select an available slot');
+          return;
+        }
+
+        const [slotDate, slotNumber] = selectedSlot.value.split('|');
+        reviewData.assignedPage = page;
+        reviewData.slotDate = slotDate;
+        reviewData.slotNumber = parseInt(slotNumber);
+      } else {
+        const reason = document.getElementById('rejectionReason').value;
+        if (!reason) {
+          alert('Please provide a rejection reason');
+          return;
+        }
+        reviewData.rejectionReason = reason;
       }
 
-      // Studio status badges
-      if (slot.studioStatus === 'Received') {
-        badges += '<span class="studio-slot-badge badge-studio-received">Received</span>';
-      } else if (slot.studioStatus === 'Working') {
-        badges += '<span class="studio-slot-badge badge-studio-working">Working</span>';
-      } else if (slot.studioStatus === 'Submitted for Review') {
-        badges += '<span class="studio-slot-badge badge-studio-review">Needs Review</span>';
-      } else if (slot.studioStatus === 'Approved') {
-        badges += '<span class="studio-slot-badge badge-studio-approved">Head Approved</span>';
+      try {
+        await updateProductReview(row, reviewData);
+        alert('✅ Product reviewed successfully!');
+        closeModal('productModal');
+        loadProducts();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
       }
+    }
 
-      let detailsHTML = '';
-
-      if (slot.category) {
-        detailsHTML += `
-          <div class="studio-slot-label">Category:</div>
-          <div class="studio-slot-value">${slot.category}</div>
-        `;
+    // Load Departments
+    async function loadDepartments() {
+      try {
+        const depts = await getAllDepartments();
+        let html = '<table><thead><tr><th>Month</th><th>Department</th><th>Budget</th><th>Slots</th><th>Color</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        
+        depts.forEach(d => {
+          html += `<tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>LKR ${d.budget.toLocaleString()}</td>
+            <td>${d.slots}</td>
+            <td><div style="width:30px;height:30px;background:${d.color};border-radius:5px;border:1px solid #ddd;"></div></td>
+            <td>${d.active}</td>
+            <td><button class="btn btn-delete" onclick="deleteDept(${d.row})">Delete</button></td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('departmentsTable').innerHTML = html;
+      } catch (error) {
+        console.error('Error loading departments:', error);
       }
+    }
 
-      if (slot.theme) {
-        detailsHTML += `
-          <div class="studio-slot-label">Theme:</div>
-          <div class="studio-slot-value">${slot.theme}</div>
-        `;
+    async function deleteDept(row) {
+      if (!confirm('Delete this department configuration?')) return;
+      
+      try {
+        await deleteDepartment(row);
+        alert('✅ Deleted successfully!');
+        loadDepartments();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
       }
+    }
 
-      if (slot.productCode) {
-        detailsHTML += `
-          <div class="studio-slot-label">Product Code:</div>
-          <div class="studio-slot-value">${slot.productCode}</div>
-        `;
+    // Department Form Submit
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const config = {
+        month: document.getElementById('month').value,
+        department: document.getElementById('department').value,
+        budget: document.getElementById('budget').value,
+        slots: document.getElementById('slots').value,
+        color: document.getElementById('color').value,
+        active: document.getElementById('active').value
+      };
+      
+      try {
+        await addDepartment(config);
+        alert('✅ Department added successfully!');
+        e.target.reset();
+        loadDepartments();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
       }
+    });
 
-      if (slot.productLink) {
-        detailsHTML += `
-          <div class="studio-slot-label">Product Link:</div>
-          <div class="studio-slot-value"><a href="${slot.productLink}" target="_blank" class="slot-link">${slot.productLink.substring(0, 50)}...</a></div>
-        `;
+    // Load Content Bookings
+    async function loadContentBookings() {
+      try {
+        const bookings = await getAllContentBookings();
+        let html = '<table><thead><tr><th>Date</th><th>Slot</th><th>Category</th><th>Product Code</th><th>Product Link</th><th>Page</th><th>Theme</th><th>Status</th><th>Submitted By</th><th>Actions</th></tr></thead><tbody>';
+        
+        bookings.forEach(b => {
+          const statusClass = b.status.toLowerCase();
+          const shortLink = b.productLink ? b.productLink.substring(0, 30) + '...' : '-';
+          html += `<tr>
+            <td>${b.date}</td>
+            <td>${b.slotNumber}</td>
+            <td>${b.category}</td>
+            <td>${b.productCode}</td>
+            <td>${b.productLink ? `<a href="${b.productLink}" target="_blank">${shortLink}</a>` : '-'}</td>
+            <td>${b.pageName || '-'}</td>
+            <td>${b.theme || '-'}</td>
+            <td><span class="status-badge status-${statusClass}">${b.status}</span></td>
+            <td>${b.submittedBy}</td>
+            <td><button class="btn btn-edit" onclick="reviewContentBooking(${b.id}, '${b.status}')">Review</button></td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('contentTable').innerHTML = html;
+      } catch (error) {
+        console.error('Error loading content:', error);
       }
+    }
 
-      if (slot.submittedBy) {
-        detailsHTML += `
-          <div class="studio-slot-label">Submitted By:</div>
-          <div class="studio-slot-value">${slot.submittedBy}</div>
-        `;
-      }
-
-      if (slot.contentLink) {
-        detailsHTML += `
-          <div class="studio-slot-label">Content Link:</div>
-          <div class="studio-slot-value"><a href="${slot.contentLink}" target="_blank" class="slot-link">${slot.contentLink}</a></div>
-        `;
-      }
-
-      if (slot.approvedBy) {
-        detailsHTML += `
-          <div class="studio-slot-label">Approved By:</div>
-          <div class="studio-slot-value">${slot.approvedBy}</div>
-        `;
-      }
-
-      // Only show actions if slot is not empty
-      let actionsHTML = '';
-      if (slot.bookingStatus !== 'empty') {
-        actionsHTML = `
-          <div class="studio-slot-actions">
-            <select id="status-${date}-${slot.slotNumber}-${slot.slotType}" class="studio-status-select">
-              <option value="Received" ${slot.studioStatus === 'Received' ? 'selected' : ''}>Received</option>
-              <option value="Working" ${slot.studioStatus === 'Working' ? 'selected' : ''}>Working</option>
-              <option value="Submitted for Review" ${slot.studioStatus === 'Submitted for Review' ? 'selected' : ''}>Submitted for Review</option>
-              <option value="Approved" ${slot.studioStatus === 'Approved' ? 'selected' : ''}>Approved</option>
-            </select>
-            <button class="btn btn-primary" onclick="updateSlotStatus('${date}', ${slot.slotNumber}, '${slot.slotType}')">Update</button>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="studio-slot-item" style="border-left-color:${slotTypeColor};">
-          <div class="studio-slot-header">
-            <div class="studio-slot-title">${slotTypeLabel}</div>
-            <div class="studio-slot-badges">${badges}</div>
-          </div>
-          ${detailsHTML ? `<div class="studio-slot-details">${detailsHTML}</div>` : '<div style="color:#999;font-style:italic;font-size:13px;">No content assigned to this slot</div>'}
-          ${actionsHTML}
+    function reviewContentBooking(id, currentStatus) {
+      const modal = document.getElementById('contentModal');
+      modal.style.display = 'block';
+      
+      document.getElementById('contentForm').innerHTML = `
+        <p><strong>Booking ID:</strong> ${id}</p>
+        <p><strong>Current Status:</strong> <span class="status-badge status-${currentStatus.toLowerCase()}">${currentStatus}</span></p>
+        <div class="form-group">
+          <label>New Status</label>
+          <select id="contentStatus">
+            <option value="Approved">✅ Approve</option>
+            <option value="Rejected">❌ Reject</option>
+          </select>
         </div>
+        <div class="form-group">
+          <label>Go Live Date (Optional)</label>
+          <input type="date" id="goLiveDate">
+        </div>
+        <div class="form-group">
+          <label>Rejection Reason (if rejecting)</label>
+          <textarea id="contentRejection" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Reviewer Name</label>
+          <input type="text" id="contentReviewer" placeholder="Your name" required>
+        </div>
+        <button class="submit-btn" onclick="updateContentBooking(${id})">Submit Review</button>
       `;
     }
 
-    async function updateSlotStatus(date, slotNumber, slotType) {
-      const selectId = `status-${date}-${slotNumber}-${slotType}`;
-      const newStatus = document.getElementById(selectId).value;
+    async function updateContentBooking(id) {
+      const status = document.getElementById('contentStatus').value;
+      const reviewer = document.getElementById('contentReviewer').value;
+      const goLiveDate = document.getElementById('goLiveDate').value;
+      const rejectionReason = document.getElementById('contentRejection').value;
+      
+      if (!reviewer) {
+        alert('Please enter your name');
+        return;
+      }
 
-      if (newStatus === 'Submitted for Review') {
-        const contentLink = prompt('Enter the content link (published post URL):');
+      const updateData = { status, reviewer };
+      if (goLiveDate) updateData.goLiveDate = goLiveDate;
+      if (status === 'Rejected' && rejectionReason) updateData.rejectionReason = rejectionReason;
+
+      try {
+        await updateContentBooking(id, updateData);
+        alert('✅ Content booking reviewed!');
+        closeModal('contentModal');
+        loadContentBookings();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
+    }
+
+    // Load Themes
+    async function loadThemes() {
+      try {
+        const themes = await getAllThemes();
+        let html = '<table><thead><tr><th>Theme Name</th><th>Start Date</th><th>End Date</th><th>Slots/Day</th><th>Type</th><th>Color</th><th>Actions</th></tr></thead><tbody>';
+        
+        themes.forEach(t => {
+          const type = t.is_seasonal ? '🎉 Seasonal' : '📅 Daily';
+          html += `<tr>
+            <td>${t.theme_name}</td>
+            <td>${t.start_date}</td>
+            <td>${t.end_date}</td>
+            <td>${t.slots_per_day}</td>
+            <td>${type}</td>
+            <td><div style="width:30px;height:30px;background:${t.theme_color};border-radius:5px;"></div></td>
+            <td><button class="btn btn-delete" onclick="deleteTheme(${t.id})">Delete</button></td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('themesTable').innerHTML = html;
+      } catch (error) {
+        console.error('Error loading themes:', error);
+      }
+    }
+
+    async function deleteTheme(themeId) {
+      if (!confirm('This will delete the theme and all its category slots. Continue?')) return;
+      
+      try {
+        await deleteTheme(themeId);
+        alert('✅ Theme deleted successfully!');
+        loadThemes();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
+    }
+
+    document.getElementById('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const themeData = {
+        themeName: document.getElementById('themeName').value,
+        startDate: document.getElementById('startDate').value,
+        endDate: document.getElementById('endDate').value,
+        slotsPerDay: document.getElementById('slotsPerDay').value,
+        themeColor: document.getElementById('themeColor').value,
+        isSeasonal: document.getElementById('isSeasonal').value === 'true'
+      };
+      
+      try {
+        await addTheme(themeData);
+        alert('✅ Theme created successfully!');
+        e.target.reset();
+        loadThemes();
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
+    });
+
+    // Load Studio Calendar
+    async function loadStudioCalendar() {
+      const month = parseInt(document.getElementById('studioMonthSelect').value);
+      const year = 2026;
+
+      try {
+        const data = await getStudioCalendarData(month, year);
+        let html = '<div style="max-height:600px;overflow-y:auto;">';
+
+        data.calendarItems.forEach(item => {
+          const date = new Date(item.date);
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+          const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+          let statusBadge = '';
+          if (item.status === 'empty') statusBadge = '<span class="status-badge" style="background:#e0e0e0;color:#666;">Empty Slot</span>';
+          else if (item.status === 'booked') statusBadge = '<span class="status-badge status-approved">Booked</span>';
+          else if (item.status === 'pending_approval') statusBadge = '<span class="status-badge status-pending">Pending</span>';
+
+          let studioStatusBadge = `<span class="status-badge status-${item.studioStatus.toLowerCase().replace(' ', '-')}">${item.studioStatus}</span>`;
+          if (item.approvedByHead) studioStatusBadge += ' <span style="color:gold;">⭐ Approved</span>';
+
+          html += `
+            <div style="background:white;margin:10px 0;padding:20px;border-left:5px solid #422B73;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div>
+                  <strong style="color:#422B73;font-size:1.1em;">${dayName}, ${dateStr}</strong>
+                  <span style="margin-left:15px;color:#666;">Slot ${item.slotNumber} | ${item.pageName}</span>
+                </div>
+                <div>${statusBadge}</div>
+              </div>
+              <div style="color:#666;margin:8px 0;">
+                <strong>Category:</strong> ${item.category} | <strong>Source:</strong> ${item.source}
+              </div>
+              ${item.productCode ? `<div style="color:#666;"><strong>Product:</strong> ${item.productCode}</div>` : ''}
+              ${item.productLink ? `<div style="margin:5px 0;"><a href="${item.productLink}" target="_blank" style="color:#422B73;">View Product</a></div>` : ''}
+              ${item.theme ? `<div style="color:#666;"><strong>Theme:</strong> ${item.theme}</div>` : ''}
+              ${item.promotionIdea ? `<div style="color:#666;"><strong>Promotion:</strong> ${item.promotionIdea}</div>` : ''}
+              <div style="margin-top:10px;padding-top:10px;border-top:1px solid #ddd;">
+                <strong>Studio Status:</strong> ${studioStatusBadge}
+                ${item.studioLink ? `<a href="${item.studioLink}" target="_blank" style="margin-left:10px;color:#422B73;">📎 View Content</a>` : ''}
+                ${item.studioId ? `<button class="btn btn-edit" onclick="updateStudioStatus(${item.studioId}, '${item.studioStatus}', ${item.approvedByHead})" style="margin-left:10px;">Update Status</button>` : ''}
+              </div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+        document.getElementById('studioCalendarView').innerHTML = html;
+      } catch (error) {
+        console.error('Error loading studio calendar:', error);
+        document.getElementById('studioCalendarView').innerHTML = '<p style="color:red;">Error loading calendar</p>';
+      }
+    }
+
+    function updateStudioStatus(studioId, currentStatus, isApproved) {
+      const modal = document.getElementById('studioModal');
+      modal.style.display = 'block';
+
+      document.getElementById('studioForm').innerHTML = `
+        <p><strong>Studio Entry ID:</strong> ${studioId}</p>
+        <p><strong>Current Status:</strong> <span class="status-badge">${currentStatus}</span> ${isApproved ? '<span style="color:gold;">⭐ Approved</span>' : ''}</p>
+        <div class="form-group">
+          <label>New Status</label>
+          <select id="studioStatus" onchange="toggleHeadPassword()">
+            <option value="Received">📥 Received</option>
+            <option value="Working">🎨 Working</option>
+            <option value="Submitted for Review">📤 Submitted for Review</option>
+            <option value="Approved">✅ Approved (Head Only)</option>
+          </select>
+        </div>
+        <div class="form-group" id="contentLinkField" style="display:none;">
+          <label>Content Link (Required for Submission)</label>
+          <input type="url" id="contentLink" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="form-group" id="headPasswordField" style="display:none;">
+          <label>Head Approval Password</label>
+          <input type="password" id="headPassword" placeholder="Enter password 207">
+          <small style="color:#666;">Only content head can approve (Password: 207)</small>
+        </div>
+        <button class="submit-btn" onclick="submitStudioUpdate(${studioId})">Update Status</button>
+      `;
+    }
+
+    function toggleHeadPassword() {
+      const status = document.getElementById('studioStatus').value;
+      document.getElementById('headPasswordField').style.display = status === 'Approved' ? 'block' : 'none';
+      document.getElementById('contentLinkField').style.display = (status === 'Submitted for Review' || status === 'Approved') ? 'block' : 'none';
+    }
+
+    async function submitStudioUpdate(studioId) {
+      const status = document.getElementById('studioStatus').value;
+      const contentLink = document.getElementById('contentLink')?.value;
+      const headPassword = document.getElementById('headPassword')?.value;
+
+      const updateData = { completion_status: status };
+
+      if (status === 'Submitted for Review') {
         if (!contentLink) {
           alert('Content link is required for submission');
           return;
         }
-
-        try {
-          showLoading();
-          await updateStudioApprovalStatus(date, slotNumber, slotType, {
-            approvalStatus: newStatus,
-            contentLink: contentLink
-          });
-          hideLoading();
-          alert('✅ Status updated to "Submitted for Review"');
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      } else if (newStatus === 'Approved') {
-        const password = prompt('Enter content head password:');
-        if (!password) return;
-
-        const approvedBy = prompt('Enter your name:');
-        if (!approvedBy) return;
-
-        try {
-          showLoading();
-          await updateStudioApprovalStatus(date, slotNumber, slotType, {
-            approvalStatus: newStatus,
-            password: password,
-            approvedBy: approvedBy
-          });
-          hideLoading();
-          alert('✅ Content approved by head!');
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      } else {
-        try {
-          showLoading();
-          await updateStudioApprovalStatus(date, slotNumber, slotType, {
-            approvalStatus: newStatus
-          });
-          hideLoading();
-          alert(`✅ Status updated to "${newStatus}"`);
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      }
-    }
-
-    function changeStudioDateRange(days) {
-      studioStartDate.setDate(studioStartDate.getDate() + days);
-      studioEndDate.setDate(studioEndDate.getDate() + days);
-      loadStudioCalendar();
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // HOT PRODUCTS
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const category = document.getElementById('hotProductCategory').value;
-      const productLink = document.getElementById('hotProductLink').value;
-      const salesCount = document.getElementById('hotProductSales').value;
-
-      if (!category || !productLink) {
-        alert('Please fill in all required fields');
-        return;
+        updateData.content_link = contentLink;
       }
 
-      try {
-        showLoading();
-        await addHotProduct({
-          category: category,
-          productLink: productLink,
-          salesCount: salesCount
-        });
-        hideLoading();
-        alert('✓ Product added successfully!');
-        document.getElementById('addHotProductForm').reset();
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error adding product: ' + error.message);
-      }
-    });
-
-    async function loadHotProducts() {
-      try {
-        showLoading();
-        allHotProducts = await getAllHotProducts();
-        const stats = await getHotProductsStats();
-
-        document.getElementById('adminTotalProducts').textContent = stats.totalProducts;
-        document.getElementById('adminListedProducts').textContent = stats.listedProducts;
-        document.getElementById('adminCategoryCount').textContent = Object.keys(stats.byCategory).length;
-
-        filterHotProducts();
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        console.error('Error loading hot products:', error);
-        document.getElementById('hotProductsTableBody').innerHTML = 
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    function filterHotProducts() {
-      const categoryFilter = document.getElementById('filterCategory').value;
-      const listedFilter = document.getElementById('filterListed').value;
-
-      let filtered = allHotProducts;
-
-      if (categoryFilter) {
-        filtered = filtered.filter(p => p.category === categoryFilter);
-      }
-
-      if (listedFilter !== '') {
-        const isListed = listedFilter === 'true';
-        filtered = filtered.filter(p => p.listed === isListed);
-      }
-
-      displayHotProducts(filtered);
-    }
-
-    function displayHotProducts(products) {
-      const tbody = document.getElementById('hotProductsTableBody');
-
-      if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = products.map(p => {
-        const shortLink = p.product_link.length > 40 ? p.product_link.substring(0, 40) + '...' : p.product_link;
-        const kaprukaShort = p.kapruka_link ? (p.kapruka_link.length > 40 ? p.kapruka_link.substring(0, 40) + '...' : p.kapruka_link) : '-';
-        const createdDate = new Date(p.created_at).toLocaleDateString();
-
-        return `
-          <tr style="border-bottom:1px solid #f0f0f0;">
-            <td style="padding:12px;font-weight:600;">${p.id}</td>
-            <td style="padding:12px;">
-              <span style="background:#E8F5E9;color:#2E7D32;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">
-                ${p.category}
-              </span>
-            </td>
-            <td style="padding:12px;">
-              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.product_link}">
-                ${shortLink}
-              </a>
-            </td>
-            <td style="padding:12px;text-align:center;font-weight:600;">${p.sales_count || 0}</td>
-            <td style="padding:12px;text-align:center;">
-              <input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:20px;height:20px;cursor:pointer;">
-            </td>
-            <td style="padding:12px;">
-              ${p.kapruka_link ? 
-                `<a href="${p.kapruka_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.kapruka_link}">${kaprukaShort}</a>` 
-                : '<span style="color:#999;">-</span>'}
-            </td>
-            <td style="padding:12px;text-align:center;color:#666;font-size:12px;">${createdDate}</td>
-            <td style="padding:12px;text-align:center;">
-              <button onclick="editHotProduct(${p.id})" style="background:#FFA726;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;">
-                Edit
-              </button>
-              <button onclick="deleteHotProductItem(${p.id})" style="background:#EF5350;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">
-                Delete
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function toggleListed(id, listed) {
-      try {
-        await updateHotProduct(id, { listed });
-        loadHotProducts();
-      } catch (error) {
-        alert('Error updating product: ' + error.message);
-      }
-    }
-
-    async function editHotProduct(id) {
-      const product = allHotProducts.find(p => p.id === id);
-      if (!product) return;
-
-      const kaprukaLink = prompt('Enter Kapruka Link:', product.kapruka_link || '');
-      if (kaprukaLink === null) return;
-
-      try {
-        showLoading();
-        await updateHotProduct(id, { kapruka_link: kaprukaLink });
-        hideLoading();
-        alert('✓ Product updated!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function deleteHotProductItem(id) {
-      if (!confirm('Delete this product?')) return;
-
-      try {
-        showLoading();
-        await deleteHotProduct(id);
-        hideLoading();
-        alert('✓ Product deleted!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // DEPARTMENTS
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('deptForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const config = {
-        month: document.getElementById('deptMonth').value,
-        department: document.getElementById('deptName').value,
-        budget: document.getElementById('deptBudget').value,
-        slots: document.getElementById('deptSlots').value,
-        color: document.getElementById('deptColor').value,
-        active: document.getElementById('deptActive').value
-      };
-
-      try {
-        showLoading();
-        await addDepartment(config);
-        hideLoading();
-        alert('✅ Department added successfully!');
-        document.getElementById('deptForm').reset();
-        loadDepartments();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    });
-
-    async function loadDepartments() {
-      try {
-        const depts = await getAllDepartments();
-        const tbody = document.getElementById('deptsTable');
-
-        if (depts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+      if (status === 'Approved') {
+        if (!headPassword) {
+          alert('Head approval password is required');
           return;
         }
-
-        tbody.innerHTML = depts.map(d => `
-          <tr>
-            <td>${d.month}</td>
-            <td>${d.department}</td>
-            <td>$${d.budget}k</td>
-            <td>${d.slots}</td>
-            <td><span class="badge ${d.active === 'Yes' ? 'badge-approved' : 'badge-rejected'}">${d.active}</span></td>
-            <td>
-              <button class="btn btn-danger" onclick="removeDept(${d.row})">Delete</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (error) {
-        document.getElementById('deptsTable').innerHTML = 
-          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+        updateData.headPassword = headPassword;
+        if (contentLink) updateData.content_link = contentLink;
       }
-    }
-
-    async function removeDept(row) {
-      if (!confirm('Delete this department?')) return;
 
       try {
-        showLoading();
-        await deleteDepartment(row);
-        hideLoading();
-        alert('✅ Department deleted!');
-        loadDepartments();
+        await updateStudioCompletion(studioId, updateData);
+        alert('✅ Studio status updated!');
+        closeModal('studioModal');
+        loadStudioCalendar();
       } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
+        alert('❌ Error: ' + error.message);
       }
     }
+
+    // Set current month on load
+    window.onload = () => {
+      const currentMonth = new Date().getMonth() + 1;
+      document.getElementById('studioMonthSelect').value = currentMonth;
+      loadRequests();
+    };
   </script>
 </body>
 </html>
