@@ -193,10 +193,6 @@ async function upsertStudioCalendarEntry(entry) {
     }
   }
 
-  // Generate ID for studio_calendar
-  const maxId = await supabaseQuery('studio_calendar?select=id&order=id.desc&limit=1');
-  payload.id = maxId.length > 0 ? maxId[0].id + 1 : 1;
-
   const result = await supabaseQuery('studio_calendar', 'POST', payload);
   return result[0].id;
 }
@@ -277,7 +273,6 @@ async function generateEmptySlotsForMonth(year, month) {
         
         if (!hasSlot) {
           slots.push({
-            id: Date.now() + Math.random(),
             date: dateStr,
             source_type: 'lead_form',
             source_id: null,
@@ -295,7 +290,7 @@ async function generateEmptySlotsForMonth(year, month) {
       }
     }
     
-    // Insert empty slots
+    // Insert empty slots - Let Supabase auto-generate IDs
     if (slots.length > 0) {
       await supabaseQuery('studio_calendar', 'POST', slots);
     }
@@ -1102,151 +1097,6 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT PERFORMANCE API
-// ═══════════════════════════════════════════════════════════════
-
-async function searchProductPerformance(keyword, startDate, endDate) {
-  try {
-    let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
-
-    if (startDate && endDate) {
-      url += `date=gte.${startDate}&date=lte.${endDate}&`;
-    }
-
-    url += `order=date.desc`;
-
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-
-    const allData = await response.json();
-
-    const keywordLower = keyword.toLowerCase();
-    const results = allData.filter(row => 
-      (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
-      (row.adset_name && row.adset_name.toLowerCase().includes(keywordLower)) ||
-      (row.ad_name && row.ad_name.toLowerCase().includes(keywordLower))
-    );
-
-    if (results.length === 0) {
-      return { level: 'none', data: [], aggregated: [] };
-    }
-
-    const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
-
-    let aggregationLevel = 'ad';
-    let dataToAggregate = results;
-    let groupBy = 'ad_name';
-
-    if (uniqueAccounts.length > 1) {
-      aggregationLevel = 'account';
-      groupBy = 'ad_account_id';
-    }
-    else {
-      const campaignMatches = results.filter(r => 
-        r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
-      );
-
-      if (campaignMatches.length > 0) {
-        aggregationLevel = 'campaign';
-        dataToAggregate = campaignMatches;
-        groupBy = 'campaign_name';
-      } 
-      else {
-        const adsetMatches = results.filter(r => 
-          r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
-        );
-
-        if (adsetMatches.length > 0) {
-          aggregationLevel = 'adset';
-          dataToAggregate = adsetMatches;
-          groupBy = 'adset_name';
-        }
-        else {
-          const adMatches = results.filter(r => 
-            r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
-          );
-
-          if (adMatches.length > 0) {
-            dataToAggregate = adMatches;
-          }
-        }
-      }
-    }
-
-    const grouped = {};
-    dataToAggregate.forEach(row => {
-      const key = row[groupBy] || 'Unknown';
-      if (!grouped[key]) {
-        grouped[key] = {
-          name: key,
-          campaign_name: row.campaign_name || 'N/A',
-          adset_name: row.adset_name || 'N/A',
-          ad_name: row.ad_name || 'N/A',
-          objective: row.objective || 'N/A',
-          amount_spent: 0,
-          reach: 0,
-          impression: 0,
-          clicks: 0,
-          results: 0,
-          direct_orders: 0,
-          dates: [],
-          ad_account_id: row.ad_account_id || 'N/A'
-        };
-      }
-
-      grouped[key].amount_spent += parseFloat(row.amount_spent || 0);
-      grouped[key].reach += parseInt(row.reach || 0);
-      grouped[key].impression += parseInt(row.impression || 0);
-      grouped[key].clicks += parseInt(row.clicks || 0);
-      grouped[key].results += parseInt(row.results || 0);
-      grouped[key].direct_orders += parseInt(row.if_direct_orders || 0);
-      grouped[key].dates.push(row.date);
-    });
-
-    const aggregated = Object.values(grouped).map(item => {
-      const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
-      const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
-      const ctr = item.impression > 0 ? ((item.clicks / item.impression) * 100).toFixed(2) : 0;
-      const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
-
-      const sortedDates = item.dates.sort();
-      const dateRange = sortedDates.length > 0 
-        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` 
-        : 'N/A';
-
-      return {
-        ...item,
-        cpc,
-        cpm,
-        ctr,
-        conversionRate,
-        dateRange,
-        dayCount: new Set(item.dates).size
-      };
-    });
-
-    return {
-      level: aggregationLevel,
-      data: results,
-      aggregated: aggregated,
-      totalRecords: results.length
-    };
-
-  } catch (error) {
-    console.error('searchProductPerformance error:', error);
-    throw error;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 // HOT PRODUCTS API
 // ═══════════════════════════════════════════════════════════════
 
@@ -1283,75 +1133,19 @@ async function addHotProduct(productData) {
     };
 
     const result = await supabaseQuery('hot_products', 'POST', data);
-    return { success: true, product: result[0] };
+    return { success: true, productId: result[0].id };
   } catch (error) {
     console.error('addHotProduct error:', error);
     throw error;
   }
 }
 
-async function updateHotProduct(productId, updateData) {
+async function deleteHotProduct(id) {
   try {
-    const data = {};
-
-    if (updateData.listed !== undefined) {
-      data.listed = updateData.listed;
-    }
-
-    if (updateData.kapruka_link !== undefined) {
-      data.kapruka_link = updateData.kapruka_link || null;
-    }
-
-    if (updateData.salesCount !== undefined) {
-      data.sales_count = parseInt(updateData.salesCount) || 0;
-    }
-
-    data.updated_at = new Date().toISOString();
-
-    await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
-    return { success: true };
-  } catch (error) {
-    console.error('updateHotProduct error:', error);
-    throw error;
-  }
-}
-
-async function deleteHotProduct(productId) {
-  try {
-    await supabaseQuery(`hot_products?id=eq.${productId}`, 'DELETE');
+    await supabaseQuery(`hot_products?id=eq.${id}`, 'DELETE');
     return { success: true };
   } catch (error) {
     console.error('deleteHotProduct error:', error);
-    throw error;
-  }
-}
-
-async function getHotProductsStats() {
-  try {
-    const products = await supabaseQuery('hot_products');
-
-    const stats = {
-      totalProducts: products.length,
-      listedProducts: products.filter(p => p.listed).length,
-      byCategory: {}
-    };
-
-    products.forEach(p => {
-      if (!stats.byCategory[p.category]) {
-        stats.byCategory[p.category] = {
-          total: 0,
-          listed: 0,
-          totalSales: 0
-        };
-      }
-      stats.byCategory[p.category].total++;
-      if (p.listed) stats.byCategory[p.category].listed++;
-      stats.byCategory[p.category].totalSales += (p.sales_count || 0);
-    });
-
-    return stats;
-  } catch (error) {
-    console.error('getHotProductsStats error:', error);
     throw error;
   }
 }
