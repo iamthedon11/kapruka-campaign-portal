@@ -696,14 +696,17 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
+    // ═══════════════════════════════════════════════════════════
+    // STATE VARIABLES
+    // ═══════════════════════════════════════════════════════════
     let isLoggedIn = false;
     let currentStudioMonth = new Date().getMonth() + 1;
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
 
-    // Hardcoded password check (from API file)
-    const ADMIN_PASSWORD = 'admin123';
-
+    // ═══════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -721,12 +724,15 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    // LOGIN
+    // ═══════════════════════════════════════════════════════════
+    // LOGIN & NAVIGATION
+    // ═══════════════════════════════════════════════════════════
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
 
-      if (password === ADMIN_PASSWORD || (typeof verifyAdminPassword === 'function' && verifyAdminPassword(password))) {
+      // Use verifyAdminPassword from supabase-api.js
+      if (typeof verifyAdminPassword === 'function' && verifyAdminPassword(password)) {
         isLoggedIn = true;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
@@ -765,7 +771,9 @@
       loadProducts();
     }
 
+    // ═══════════════════════════════════════════════════════════
     // CAMPAIGN REQUESTS
+    // ═══════════════════════════════════════════════════════════
     async function loadRequests() {
       try {
         const requests = await getAllRequests();
@@ -827,7 +835,9 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
     // PRODUCT SUGGESTIONS
+    // ═══════════════════════════════════════════════════════════
     async function loadProducts() {
       try {
         const products = await getAllProductSuggestions();
@@ -1067,7 +1077,9 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
     // CONTENT CALENDAR
+    // ═══════════════════════════════════════════════════════════
     async function loadContentData() {
       try {
         const bookings = await getAllContentBookings();
@@ -1212,7 +1224,9 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
     // STUDIO CALENDAR
+    // ═══════════════════════════════════════════════════════════
     async function loadStudioCalendar() {
       try {
         showLoading();
@@ -1259,14 +1273,12 @@
       const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1).getDay();
       const totalDays = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
 
-      // Empty cells before first day
       for (let i = 0; i < firstDay; i++) {
         const cell = document.createElement('div');
         cell.className = 'calendar-day empty';
         grid.appendChild(cell);
       }
 
-      // Group calendar items by date
       const itemsByDate = {};
       if (studioCalendarData && studioCalendarData.calendarItems) {
         studioCalendarData.calendarItems.filter(item => item.status === 'booked').forEach(item => {
@@ -1277,7 +1289,6 @@
         });
       }
 
-      // Group themes by date range
       const themesByDate = {};
       if (studioCalendarData && studioCalendarData.themes) {
         studioCalendarData.themes.forEach(theme => {
@@ -1294,7 +1305,6 @@
         });
       }
 
-      // Create day cells
       for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayOfWeek = new Date(dateStr).getDay();
@@ -1314,13 +1324,11 @@
         cell.classList.add('empty');
       }
 
-      // Day number
       const dayNumberDiv = document.createElement('div');
       dayNumberDiv.className = 'day-number';
       dayNumberDiv.textContent = day;
       cell.appendChild(dayNumberDiv);
 
-      // Show themes if any
       if (dayThemes.length > 0) {
         const themeDiv = document.createElement('div');
         themeDiv.style.cssText = 'font-size:8px;color:#666;margin-bottom:5px;font-weight:600;padding:2px 4px;background:#f0f0f0;border-radius:3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
@@ -1335,7 +1343,6 @@
         }
       }
 
-      // Get assigned page for this day based on weekday
       const pageSchedule = {
         1: 'Kapruka FB Leads',
         2: 'Electronic Factory',
@@ -1354,7 +1361,6 @@
         cell.appendChild(pageDiv);
       }
 
-      // Show content items
       dayItems.forEach(item => {
         const statusColor = item.studioStatus === 'completed' ? '#43A047' :
                            item.studioStatus === 'working' ? '#F57C00' : '#2196F3';
