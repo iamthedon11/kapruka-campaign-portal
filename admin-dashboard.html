@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    /* [KEEP ALL EXISTING STYLES - NO CHANGES] */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
@@ -467,6 +468,20 @@
             </div>
           </div>
 
+          <!-- ADD FILTER SECTION -->
+          <div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+              <label>Filter by Status</label>
+              <select id="studioStatusFilter" onchange="loadStudioCalendar()" style="padding:12px;">
+                <option value="">All Content</option>
+                <option value="not_started">Not Started</option>
+                <option value="working">Working</option>
+                <option value="submitted">Completed but Not Approved</option>
+                <option value="approved">Approved by Head</option>
+              </select>
+            </div>
+          </div>
+
           <div class="calendar-header">
             <div class="month-nav">
               <button onclick="changeStudioMonth(-1)">◀ Previous</button>
@@ -489,19 +504,161 @@
         </div>
       </div>
 
-      <!-- Hot Products Tab -->
+      <!-- Hot Products Tab - FIXED -->
       <div id="tab-hotproducts" class="tab-content">
         <div class="card">
-          <h2>🔥 Hot Products Management</h2>
-          <p style="text-align:center;padding:40px;color:#999;">Hot Products section</p>
+          <h2>🔥 Add Hot Product</h2>
+          <form id="addHotProductForm">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Category *</label>
+                <input type="text" id="hotProductCategory" required placeholder="e.g., Electronics">
+              </div>
+              <div class="form-group">
+                <label>Product Link *</label>
+                <input type="url" id="hotProductLink" required placeholder="https://...">
+              </div>
+              <div class="form-group">
+                <label>Sales Count</label>
+                <input type="number" id="hotProductSales" placeholder="0" min="0">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Product</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📊 Hot Products Stats</h2>
+          <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="stat-card" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);">
+              <div class="stat-label" style="color:#1565C0;">Total Products</div>
+              <div class="stat-number" style="color:#0D47A1;" id="adminTotalProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
+              <div class="stat-label" style="color:#2E7D32;">Listed Products</div>
+              <div class="stat-number" style="color:#1B5E20;" id="adminListedProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);">
+              <div class="stat-label" style="color:#E65100;">Categories</div>
+              <div class="stat-number" style="color:#BF360C;" id="adminCategoryCount">0</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:15px;margin-top:30px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+              <label>Filter by Category</label>
+              <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+              <label>Filter by Listed Status</label>
+              <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;">
+                <option value="">All Products</option>
+                <option value="true">Listed Only</option>
+                <option value="false">Unlisted Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🔥 All Hot Products</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Category</th>
+                  <th>Product Link</th>
+                  <th>Sales Count</th>
+                  <th>Listed</th>
+                  <th>Kapruka Link</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="hotProductsTableBody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Departments Tab -->
+      <!-- Departments Tab - FIXED -->
       <div id="tab-departments" class="tab-content">
         <div class="card">
-          <h2>🏢 Departments</h2>
-          <p style="text-align:center;padding:40px;color:#999;">Departments section</p>
+          <h2>🏢 Add Department Configuration</h2>
+          <form id="deptForm">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Month *</label>
+                <select id="deptMonth" required>
+                  <option value="">Select Month</option>
+                  <option value="January">January</option>
+                  <option value="February">February</option>
+                  <option value="March">March</option>
+                  <option value="April">April</option>
+                  <option value="May">May</option>
+                  <option value="June">June</option>
+                  <option value="July">July</option>
+                  <option value="August">August</option>
+                  <option value="September">September</option>
+                  <option value="October">October</option>
+                  <option value="November">November</option>
+                  <option value="December">December</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Department Name *</label>
+                <input type="text" id="deptName" required placeholder="e.g., Marketing">
+              </div>
+              <div class="form-group">
+                <label>Budget (in thousands) *</label>
+                <input type="number" id="deptBudget" required placeholder="e.g., 50" min="0">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Available Slots *</label>
+                <input type="number" id="deptSlots" required placeholder="e.g., 10" min="1">
+              </div>
+              <div class="form-group">
+                <label>Color</label>
+                <input type="color" id="deptColor" value="#5e3a8e">
+              </div>
+              <div class="form-group">
+                <label>Active Status *</label>
+                <select id="deptActive" required>
+                  <option value="Yes">Yes - Active</option>
+                  <option value="No">No - Inactive</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Department</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>🏢 All Departments</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Slots</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deptsTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -770,6 +927,10 @@
           updated_at: new Date().toISOString()
         };
 
+        if (updateData.productCode !== undefined) {
+          data.product_code = updateData.productCode;
+        }
+
         if (updateData.status === 'Rejected') {
           data.rejection_reason = updateData.rejectionReason || '';
         }
@@ -819,31 +980,40 @@
       }
     }
 
+    // FIXED: getStudioCalendarData - proper theme and content sync
     async function getStudioCalendarData(month, year) {
       try {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const lastDay = new Date(year, month, 0).getDate();
         const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
+        // Fetch themes for this month
+        const themes = await supabaseQuery(
+          `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+        );
+
+        // Fetch category slots
         const categorySlots = await supabaseQuery(
           `category_slots?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
         );
 
+        // Fetch content bookings
         const contentBookings = await supabaseQuery(
           `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
         );
 
+        // Fetch studio entries
         const studioEntries = await supabaseQuery(
           `studio_calendar?date=gte.${startDate}&date=lte.${endDate}`
         );
 
         const calendarItems = [];
 
+        // Map each category slot to calendar item
         categorySlots.forEach(slot => {
           const booking = contentBookings.find(b => 
             b.date === slot.date && 
-            b.slot_number === slot.slot_number &&
-            (b.status === 'Approved' || b.status === 'Pending')
+            b.slot_number === slot.slot_number
           );
 
           const studioEntry = studioEntries.find(s => 
@@ -852,25 +1022,32 @@
             s.source_id === booking?.id
           );
 
+          // Find applicable theme for this date
+          const applicableTheme = themes.find(t => 
+            slot.date >= t.start_date && slot.date <= t.end_date
+          );
+
           calendarItems.push({
             date: slot.date,
             slotNumber: slot.slot_number,
             category: slot.category,
             type: 'content_slot',
-            status: booking ? (booking.status === 'Approved' ? 'booked' : 'pending') : 'empty',
+            status: booking ? (booking.status === 'Approved' ? 'booked' : booking.status === 'Pending' ? 'pending' : 'empty') : 'empty',
             productCode: booking?.product_code || null,
             productLink: booking?.product_link || null,
-            theme: booking?.theme || '',
+            theme: applicableTheme?.theme_name || '',
+            themeColor: applicableTheme?.theme_color || '#5e3a8e',
             submittedBy: booking?.submitted_by || null,
             studioStatus: studioEntry?.completion_status || 'not_started',
             studioLink: studioEntry?.content_link || null,
             studioId: studioEntry?.id || null,
-            bookingId: booking?.id || null
+            bookingId: booking?.id || null,
+            bookingStatus: booking?.status || 'empty'
           });
         });
 
         return {
-          themes: [],
+          themes: themes,
           calendarItems: calendarItems.sort((a, b) => {
             if (a.date === b.date) {
               return (a.slotNumber || 0) - (b.slotNumber || 0);
@@ -896,6 +1073,128 @@
       return { success: true };
     }
 
+    // HOT PRODUCTS API FUNCTIONS
+    async function getAllHotProducts() {
+      try {
+        const products = await supabaseQuery('hot_products?order=created_at.desc');
+        return products.map(p => ({
+          id: p.id,
+          category: p.category,
+          product_link: p.product_link,
+          sales_count: p.sales_count || 0,
+          listed: p.listed || false,
+          kapruka_link: p.kapruka_link || '',
+          created_at: p.created_at
+        }));
+      } catch (error) {
+        console.error('getAllHotProducts error:', error);
+        return [];
+      }
+    }
+
+    async function addHotProduct(data) {
+      try {
+        const product = {
+          category: data.category,
+          product_link: data.productLink,
+          sales_count: parseInt(data.salesCount) || 0,
+          listed: false,
+          created_at: new Date().toISOString()
+        };
+        await supabaseQuery('hot_products', 'POST', product);
+        return { success: true };
+      } catch (error) {
+        console.error('addHotProduct error:', error);
+        throw error;
+      }
+    }
+
+    async function updateHotProduct(id, data) {
+      try {
+        await supabaseQuery(`hot_products?id=eq.${id}`, 'PATCH', data);
+        return { success: true };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function deleteHotProduct(id) {
+      try {
+        await supabaseQuery(`hot_products?id=eq.${id}`, 'DELETE');
+        return { success: true };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function getHotProductsStats() {
+      try {
+        const products = await getAllHotProducts();
+        const byCategory = {};
+        let listedCount = 0;
+
+        products.forEach(p => {
+          byCategory[p.category] = (byCategory[p.category] || 0) + 1;
+          if (p.listed) listedCount++;
+        });
+
+        return {
+          totalProducts: products.length,
+          listedProducts: listedCount,
+          byCategory: byCategory
+        };
+      } catch (error) {
+        console.error('getHotProductsStats error:', error);
+        return { totalProducts: 0, listedProducts: 0, byCategory: {} };
+      }
+    }
+
+    // DEPARTMENTS API FUNCTIONS
+    async function getAllDepartments() {
+      try {
+        const depts = await supabaseQuery('departments?order=id.desc');
+        return depts.map(d => ({
+          row: d.id,
+          month: d.month,
+          department: d.department,
+          budget: d.budget,
+          slots: d.slots,
+          color: d.color || '#5e3a8e',
+          active: d.active
+        }));
+      } catch (error) {
+        console.error('getAllDepartments error:', error);
+        return [];
+      }
+    }
+
+    async function addDepartment(data) {
+      try {
+        const dept = {
+          month: data.month,
+          department: data.department,
+          budget: parseInt(data.budget),
+          slots: parseInt(data.slots),
+          color: data.color || '#5e3a8e',
+          active: data.active,
+          created_at: new Date().toISOString()
+        };
+        await supabaseQuery('departments', 'POST', dept);
+        return { success: true };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function deleteDepartment(id) {
+      try {
+        await supabaseQuery(`departments?id=eq.${id}`, 'DELETE');
+        return { success: true };
+      } catch (error) {
+        throw error;
+      }
+    }
+
     // ═══════════════════════════════════════════════════════════
     // STATE & UI FUNCTIONS
     // ═══════════════════════════════════════════════════════════
@@ -903,6 +1202,7 @@
     let currentStudioMonth = new Date().getMonth() + 1;
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
+    let allHotProducts = [];
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -921,14 +1221,19 @@
       document.getElementById('modal').style.display = 'none';
     }
 
+    // FIXED: Prevent page refresh and maintain tab state
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+      e.preventDefault(); // PREVENT REFRESH
       const password = document.getElementById('adminPassword').value;
 
       if (verifyAdminPassword(password)) {
         isLoggedIn = true;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
+        
+        // Set initial tab from hash or default to requests
+        const hash = window.location.hash.substring(1) || 'requests';
+        switchTab(hash);
         loadAllData();
       } else {
         alert('❌ Invalid password');
@@ -940,13 +1245,23 @@
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
       document.getElementById('adminPassword').value = '';
+      window.location.hash = '';
     }
 
+    // FIXED: Tab switching with URL hash to prevent refresh issues
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
+      
+      // Find and activate the clicked tab button
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('onclick')?.includes(tab)) {
+          btn.classList.add('active');
+        }
+      });
+      
       document.getElementById('tab-' + tab).classList.add('active');
+      window.location.hash = tab; // Set hash without reload
 
       if (tab === 'content') {
         loadContentData();
@@ -956,8 +1271,20 @@
         loadRequests();
       } else if (tab === 'products') {
         loadProducts();
+      } else if (tab === 'hotproducts') {
+        loadHotProducts();
+      } else if (tab === 'departments') {
+        loadDepartments();
       }
     }
+
+    // Handle back/forward browser navigation
+    window.addEventListener('hashchange', () => {
+      if (isLoggedIn) {
+        const tab = window.location.hash.substring(1) || 'requests';
+        switchTab(tab);
+      }
+    });
 
     async function loadAllData() {
       loadRequests();
@@ -1025,6 +1352,7 @@
       }
     }
 
+    // FIXED: Product suggestions with Edit button for approved items
     async function loadProducts() {
       try {
         const products = await getAllProductSuggestions();
@@ -1039,13 +1367,12 @@
           let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
                           p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
 
+          // FIXED: Add Edit button for approved products
           const actions = p.status === 'Approved' 
             ? `
-              <div>
+              <div class="action-btns">
                 <span class="badge ${badgeClass}">${p.status}</span>
-                <button class="btn btn-info" style="margin-top:8px;" onclick="showAvailableSlots('${p.assignedPage || ''}', ${p.row})">
-                  View Available Slots
-                </button>
+                <button class="btn btn-warning" onclick="editProductSuggestion(${p.row})">Edit</button>
               </div>
             `
             : `
@@ -1076,6 +1403,43 @@
       } catch (error) {
         document.getElementById('productsTable').innerHTML = 
           '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    // FIXED: Edit function for approved product suggestions
+    async function editProductSuggestion(row) {
+      const products = await getAllProductSuggestions();
+      const product = products.find(p => p.row === row);
+      if (!product) return;
+
+      const action = confirm('Do you want to:\nOK = Reject this approval\nCancel = Reassign slot');
+      
+      if (action) {
+        // Reject the approval
+        const reviewer = prompt('Enter your name:');
+        if (!reviewer) return;
+        const reason = prompt('Rejection reason:');
+        if (!reason) return;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Rejected',
+            reviewerName: reviewer,
+            rejectionReason: reason
+          });
+          hideLoading();
+          alert('✅ Product approval rejected!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      } else {
+        // Reassign slot
+        const reviewer = prompt('Enter your name:');
+        if (!reviewer) return;
+        showApprovalModal(row, reviewer);
       }
     }
 
@@ -1311,6 +1675,7 @@
       }
     }
 
+    // FIXED: Content bookings with Edit button for approved content
     async function loadContentData() {
       try {
         const bookings = await getAllContentBookings();
@@ -1323,7 +1688,15 @@
             let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
                             b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
 
-            const actions = b.status === 'Pending' 
+            // FIXED: Add Edit button for approved content
+            const actions = b.status === 'Approved'
+              ? `
+                <div class="action-btns">
+                  <span class="badge ${badgeClass}">${b.status}</span>
+                  <button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>
+                </div>
+              `
+              : b.status === 'Pending'
               ? `
                 <div class="action-btns">
                   <button class="btn btn-success" onclick="approveContentBooking(${b.id})">Approve</button>
@@ -1369,6 +1742,60 @@
       }
     }
 
+    // FIXED: Edit function for approved content bookings
+    async function editContentBooking(id) {
+      const bookings = await getAllContentBookings();
+      const booking = bookings.find(b => b.id === id);
+      if (!booking) return;
+
+      const action = confirm('Do you want to:\nOK = Reject this approval\nCancel = Update product code');
+      
+      if (action) {
+        // Reject the approval
+        const reviewer = prompt('Enter your name:');
+        if (!reviewer) return;
+        const reason = prompt('Rejection reason:');
+        if (!reason) return;
+
+        try {
+          showLoading();
+          await updateContentBooking(id, {
+            status: 'Rejected',
+            reviewer: reviewer,
+            rejectionReason: reason
+          });
+          hideLoading();
+          alert('✅ Content booking rejected!');
+          loadContentData();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      } else {
+        // Update product code
+        const newCode = prompt('Enter new product code:', booking.productCode);
+        if (!newCode) return;
+
+        const reviewer = prompt('Enter your name:');
+        if (!reviewer) return;
+
+        try {
+          showLoading();
+          await updateContentBooking(id, {
+            status: 'Approved',
+            reviewer: reviewer,
+            productCode: newCode
+          });
+          hideLoading();
+          alert('✅ Product code updated!');
+          loadContentData();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      }
+    }
+
     async function approveContentBooking(id) {
       const reviewer = prompt('Enter your name:');
       if (!reviewer) return;
@@ -1411,8 +1838,9 @@
       }
     }
 
+    // FIXED: Prevent form refresh on theme submission
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+      e.preventDefault(); // PREVENT REFRESH
 
       try {
         showLoading();
@@ -1449,6 +1877,7 @@
       }
     }
 
+    // FIXED: Studio calendar with proper filtering and theme colors
     async function loadStudioCalendar() {
       try {
         showLoading();
@@ -1487,6 +1916,7 @@
       document.getElementById('approvedSlots').textContent = approved;
     }
 
+    // FIXED: Render studio calendar with theme colors and proper display logic
     function renderStudioCalendar(data) {
       const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
       const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
@@ -1495,6 +1925,9 @@
 
       const grid = document.getElementById('studioCalendarGrid');
       grid.innerHTML = '';
+
+      // Get filter value
+      const statusFilter = document.getElementById('studioStatusFilter').value;
 
       for (let i = 0; i < startDayOfWeek; i++) {
         grid.appendChild(createEmptyCell());
@@ -1513,8 +1946,17 @@
         else if (dayOfWeek === 6) assignedPage = 'Handbag Factory';
         else if (dayOfWeek === 0) assignedPage = 'TikTok Video';
 
-        const dayItems = data.calendarItems.filter(item => item.date === dateStr && item.status === 'booked');
-        grid.appendChild(createDayCell(day, dateStr, dayItems, assignedPage));
+        let dayItems = data.calendarItems.filter(item => item.date === dateStr && item.status === 'booked');
+        
+        // Apply filter
+        if (statusFilter) {
+          dayItems = dayItems.filter(item => (item.studioStatus || 'not_started') === statusFilter);
+        }
+
+        // Find theme for this day
+        const dayTheme = data.themes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
+
+        grid.appendChild(createDayCell(day, dateStr, dayItems, assignedPage, dayTheme));
       }
     }
 
@@ -1524,9 +1966,16 @@
       return cell;
     }
 
-    function createDayCell(dayNum, dateStr, items, assignedPage) {
+    // FIXED: Create day cell with theme color and conditional display logic
+    function createDayCell(dayNum, dateStr, items, assignedPage, theme) {
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
+
+      // Apply theme color if exists
+      if (theme) {
+        cell.style.borderColor = theme.theme_color;
+        cell.style.borderWidth = '3px';
+      }
 
       const dayHeader = document.createElement('div');
       dayHeader.className = 'day-number';
@@ -1535,6 +1984,14 @@
         ${assignedPage ? `<span class="page-badge">${assignedPage.split(' ')[0]}</span>` : ''}
       `;
       cell.appendChild(dayHeader);
+
+      // Show theme name if exists
+      if (theme) {
+        const themeLabel = document.createElement('div');
+        themeLabel.style.cssText = `font-size:10px;color:${theme.theme_color};font-weight:700;margin-bottom:8px;text-align:center;`;
+        themeLabel.textContent = theme.theme_name;
+        cell.appendChild(themeLabel);
+      }
 
       if (items.length === 0) {
         const emptyMsg = document.createElement('div');
@@ -1546,6 +2003,7 @@
 
       items.forEach(item => {
         const status = item.studioStatus || 'not_started';
+        const bookingStatus = item.bookingStatus || 'empty';
         let statusColor, statusIcon, statusText;
 
         if (status === 'not_started') {
@@ -1568,12 +2026,22 @@
 
         const contentDiv = document.createElement('div');
         contentDiv.className = `content-item status-${status}`;
-        contentDiv.innerHTML = `
-          <div style="font-weight:700;color:#333;margin-bottom:2px;">${item.category || 'Content'}</div>
-          <div style="font-size:8px;color:#666;">${item.productCode || 'N/A'}</div>
-          <div style="font-size:8px;color:${statusColor};margin-top:2px;">${statusIcon} ${statusText}</div>
-        `;
-        contentDiv.title = `${item.category} - ${item.productCode} (${statusText})`;
+        
+        // FIXED: Display logic - if not approved, show only category; if approved, show full details
+        if (bookingStatus !== 'Approved') {
+          contentDiv.innerHTML = `
+            <div style="font-weight:700;color:#666;margin-bottom:2px;">${item.category || 'Content'}</div>
+            <div style="font-size:8px;color:${statusColor};margin-top:2px;">${statusIcon} ${statusText}</div>
+          `;
+        } else {
+          contentDiv.innerHTML = `
+            <div style="font-weight:700;color:#333;margin-bottom:2px;">${item.category || 'Content'}</div>
+            <div style="font-size:8px;color:#666;">${item.productCode || 'N/A'}</div>
+            <div style="font-size:8px;color:${statusColor};margin-top:2px;">${statusIcon} ${statusText}</div>
+          `;
+        }
+        
+        contentDiv.title = `${item.category} - ${item.productCode || 'Pending'} (${statusText})`;
 
         contentDiv.onclick = (e) => {
           e.stopPropagation();
@@ -1731,6 +2199,249 @@
         currentStudioYear--;
       }
       loadStudioCalendar();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HOT PRODUCTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); // PREVENT REFRESH
+
+      const category = document.getElementById('hotProductCategory').value;
+      const productLink = document.getElementById('hotProductLink').value;
+      const salesCount = document.getElementById('hotProductSales').value;
+
+      if (!category || !productLink) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      try {
+        showLoading();
+        await addHotProduct({
+          category: category,
+          productLink: productLink,
+          salesCount: salesCount
+        });
+        hideLoading();
+        alert('✓ Product added successfully!');
+        
+   document.getElementById('addHotProductForm').reset();
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error adding product: ' + error.message);
+      }
+    });
+
+    async function loadHotProducts() {
+      try {
+        showLoading();
+        allHotProducts = await getAllHotProducts();
+        const stats = await getHotProductsStats();
+
+        document.getElementById('adminTotalProducts').textContent = stats.totalProducts;
+        document.getElementById('adminListedProducts').textContent = stats.listedProducts;
+        document.getElementById('adminCategoryCount').textContent = Object.keys(stats.byCategory).length;
+
+        // Populate category filter
+        const categoryFilter = document.getElementById('filterCategory');
+        const categories = Object.keys(stats.byCategory).sort();
+        categoryFilter.innerHTML = '<option value="">All Categories</option>' + 
+          categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+        filterHotProducts();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('Error loading hot products:', error);
+        document.getElementById('hotProductsTableBody').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    function filterHotProducts() {
+      const categoryFilter = document.getElementById('filterCategory').value;
+      const listedFilter = document.getElementById('filterListed').value;
+
+      let filtered = allHotProducts;
+
+      if (categoryFilter) {
+        filtered = filtered.filter(p => p.category === categoryFilter);
+      }
+
+      if (listedFilter !== '') {
+        const isListed = listedFilter === 'true';
+        filtered = filtered.filter(p => p.listed === isListed);
+      }
+
+      displayHotProducts(filtered);
+    }
+
+    function displayHotProducts(products) {
+      const tbody = document.getElementById('hotProductsTableBody');
+
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = products.map(p => {
+        const shortLink = p.product_link.length > 40 ? p.product_link.substring(0, 40) + '...' : p.product_link;
+        const kaprukaShort = p.kapruka_link ? (p.kapruka_link.length > 40 ? p.kapruka_link.substring(0, 40) + '...' : p.kapruka_link) : '-';
+        const createdDate = new Date(p.created_at).toLocaleDateString();
+
+        return `
+          <tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:12px;font-weight:600;">${p.id}</td>
+            <td style="padding:12px;">
+              <span style="background:#E8F5E9;color:#2E7D32;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">
+                ${p.category}
+              </span>
+            </td>
+            <td style="padding:12px;">
+              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.product_link}">
+                ${shortLink}
+              </a>
+            </td>
+            <td style="padding:12px;text-align:center;font-weight:600;">${p.sales_count || 0}</td>
+            <td style="padding:12px;text-align:center;">
+              <input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:20px;height:20px;cursor:pointer;">
+            </td>
+            <td style="padding:12px;">
+              ${p.kapruka_link ? 
+                `<a href="${p.kapruka_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.kapruka_link}">${kaprukaShort}</a>` 
+                : '<span style="color:#999;">-</span>'}
+            </td>
+            <td style="padding:12px;text-align:center;color:#666;font-size:12px;">${createdDate}</td>
+            <td style="padding:12px;text-align:center;">
+              <button onclick="editHotProduct(${p.id})" style="background:#FFA726;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;">
+                Edit
+              </button>
+              <button onclick="deleteHotProductItem(${p.id})" style="background:#EF5350;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">
+                Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function toggleListed(id, listed) {
+      try {
+        await updateHotProduct(id, { listed });
+        loadHotProducts();
+      } catch (error) {
+        alert('Error updating product: ' + error.message);
+      }
+    }
+
+    async function editHotProduct(id) {
+      const product = allHotProducts.find(p => p.id === id);
+      if (!product) return;
+
+      const kaprukaLink = prompt('Enter Kapruka Link:', product.kapruka_link || '');
+      if (kaprukaLink === null) return;
+
+      try {
+        showLoading();
+        await updateHotProduct(id, { kapruka_link: kaprukaLink });
+        hideLoading();
+        alert('✓ Product updated!');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function deleteHotProductItem(id) {
+      if (!confirm('Delete this product?')) return;
+
+      try {
+        showLoading();
+        await deleteHotProduct(id);
+        hideLoading();
+        alert('✓ Product deleted!');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DEPARTMENTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); // PREVENT REFRESH
+
+      const config = {
+        month: document.getElementById('deptMonth').value,
+        department: document.getElementById('deptName').value,
+        budget: document.getElementById('deptBudget').value,
+        slots: document.getElementById('deptSlots').value,
+        color: document.getElementById('deptColor').value,
+        active: document.getElementById('deptActive').value
+      };
+
+      try {
+        showLoading();
+        await addDepartment(config);
+        hideLoading();
+        alert('✅ Department added successfully!');
+        document.getElementById('deptForm').reset();
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadDepartments() {
+      try {
+        showLoading();
+        const depts = await getAllDepartments();
+        const tbody = document.getElementById('deptsTable');
+        hideLoading();
+
+        if (depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>$${d.budget}k</td>
+            <td>${d.slots}</td>
+            <td><span class="badge ${d.active === 'Yes' ? 'badge-approved' : 'badge-rejected'}">${d.active}</span></td>
+            <td>
+              <button class="btn btn-danger" onclick="removeDept(${d.row})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        hideLoading();
+        document.getElementById('deptsTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function removeDept(row) {
+      if (!confirm('Delete this department?')) return;
+
+      try {
+        showLoading();
+        await deleteDepartment(row);
+        hideLoading();
+        alert('✅ Department deleted!');
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
     }
   </script>
 </body>
