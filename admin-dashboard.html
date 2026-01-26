@@ -759,7 +759,61 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--primary-purple-dark);
     }
-  </style>
+  
+    /* Filters Bar */
+    .filters-bar {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      color: var(--primary-purple);
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 10px 12px;
+      border: 2px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .date-filter-btn {
+      padding: 8px 14px;
+      border: 2px solid #e8e8e8;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .date-filter-btn.active {
+      background: var(--primary-purple);
+      color: white;
+      border-color: var(--primary-purple);
+    }
+
+    .date-filter-btn:hover {
+      border-color: var(--accent-gold);
+    }
+</style>
 </head>
 <body>
   <div class="loading" id="loading"><div class="spinner"></div></div>
@@ -804,6 +858,42 @@
       <div id="tab-requests" class="tab-content active">
         <div class="card">
           <h2>📋 Campaign Requests</h2>
+
+          <!-- Filters -->
+          <div class="filters-bar">
+            <div class="filter-group">
+              <label>Status Filter</label>
+              <select id="requestsStatusFilter" onchange="filterRequests()">
+                <option value="all">All Status</option>
+                <option value="Working">Working</option>
+                <option value="Live">Live</option>
+                <option value="Completed">Completed</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Date Filter</label>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="date-filter-btn active" onclick="filterRequestsByDate('all')">All</button>
+                <button class="date-filter-btn" onclick="filterRequestsByDate('today')">Today</button>
+                <button class="date-filter-btn" onclick="filterRequestsByDate('yesterday')">Yesterday</button>
+                <button class="date-filter-btn" onclick="filterRequestsByDate('3days')">3 Days</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Custom Date From</label>
+              <input type="date" id="requestsDateFrom" onchange="filterRequests()">
+            </div>
+            <div class="filter-group">
+              <label>Custom Date To</label>
+              <input type="date" id="requestsDateTo" onchange="filterRequests()">
+            </div>
+            <div class="filter-group">
+              <label>Search</label>
+              <input type="text" id="requestsSearch" placeholder="Search campaign, department..." oninput="filterRequests()">
+            </div>
+          </div>
+
           <div class="table-container">
             <table>
               <thead>
@@ -830,6 +920,41 @@
       <div id="tab-products" class="tab-content">
         <div class="card">
           <h2>💡 Lead Form Products Suggestions</h2>
+
+          <!-- Filters -->
+          <div class="filters-bar">
+            <div class="filter-group">
+              <label>Status Filter</label>
+              <select id="productsStatusFilter" onchange="filterProducts()">
+                <option value="all">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Date Filter</label>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="date-filter-btn active" onclick="filterProductsByDate('all')">All</button>
+                <button class="date-filter-btn" onclick="filterProductsByDate('today')">Today</button>
+                <button class="date-filter-btn" onclick="filterProductsByDate('yesterday')">Yesterday</button>
+                <button class="date-filter-btn" onclick="filterProductsByDate('3days')">3 Days</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Custom Date From</label>
+              <input type="date" id="productsDateFrom" onchange="filterProducts()">
+            </div>
+            <div class="filter-group">
+              <label>Custom Date To</label>
+              <input type="date" id="productsDateTo" onchange="filterProducts()">
+            </div>
+            <div class="filter-group">
+              <label>Search</label>
+              <input type="text" id="productsSearch" placeholder="Search product, category..." oninput="filterProducts()">
+            </div>
+          </div>
+
           <div class="table-container">
             <table>
               <thead>
@@ -897,6 +1022,42 @@
 
         <div class="card">
           <h2>🗂️ Content Bookings Approval</h2>
+
+          <!-- Filters -->
+          <div class="filters-bar">
+            <div class="filter-group">
+              <label>Status Filter</label>
+              <select id="contentStatusFilter" onchange="filterContentBookings()">
+                <option value="all">All Status</option>
+                <option value="Received">Received</option>
+                <option value="Working">Working</option>
+                <option value="Submitted for Review">Submitted for Review</option>
+                <option value="Approved">Approved</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Date Filter</label>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="date-filter-btn active" onclick="filterContentByDate('all')">All</button>
+                <button class="date-filter-btn" onclick="filterContentByDate('today')">Today</button>
+                <button class="date-filter-btn" onclick="filterContentByDate('yesterday')">Yesterday</button>
+                <button class="date-filter-btn" onclick="filterContentByDate('3days')">3 Days</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Custom Date From</label>
+              <input type="date" id="contentDateFrom" onchange="filterContentBookings()">
+            </div>
+            <div class="filter-group">
+              <label>Custom Date To</label>
+              <input type="date" id="contentDateTo" onchange="filterContentBookings()">
+            </div>
+            <div class="filter-group">
+              <label>Search</label>
+              <input type="text" id="contentSearch" placeholder="Search category, product..." oninput="filterContentBookings()">
+            </div>
+          </div>
+
           <div class="table-container">
             <table>
               <thead>
@@ -1892,7 +2053,8 @@
     async function loadThemes() {
       try {
         const themes = await getAllThemes();
-        const tbody = document.getElementById('themesTable');
+        allContentBookings = bookings;
+      const tbody = document.getElementById('themesTable');
 
         if (themes.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
@@ -2483,8 +2645,281 @@
     // Initialize
     currentStudioMonth = 1;
     currentStudioYear = 2026;
-  </script>
+  
+
+    // ═══════════════════════════════════════════════════════════
+    // FILTER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+
+    let allRequests = [];
+    let allProductSuggestions = [];
+    let allContentBookings = [];
+    let currentRequestsDateFilter = 'all';
+    let currentProductsDateFilter = 'all';
+    let currentContentDateFilter = 'all';
+
+    // Campaign Requests Filters
+    function filterRequestsByDate(period) {
+      currentRequestsDateFilter = period;
+      document.querySelectorAll('#tab-requests .date-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Clear custom dates if using preset
+      if (period !== 'custom') {
+        document.getElementById('requestsDateFrom').value = '';
+        document.getElementById('requestsDateTo').value = '';
+      }
+
+      filterRequests();
+    }
+
+    function filterRequests() {
+      const statusFilter = document.getElementById('requestsStatusFilter').value;
+      const searchText = document.getElementById('requestsSearch').value.toLowerCase();
+      const dateFrom = document.getElementById('requestsDateFrom').value;
+      const dateTo = document.getElementById('requestsDateTo').value;
+
+      let filtered = allRequests.filter(req => {
+        // Status filter
+        if (statusFilter !== 'all' && req.status !== statusFilter) return false;
+
+        // Search filter
+        if (searchText && !req.campaign_name?.toLowerCase().includes(searchText) && 
+            !req.department?.toLowerCase().includes(searchText)) return false;
+
+        // Date filter
+        if (currentRequestsDateFilter !== 'all' && req.created_at) {
+          const reqDate = new Date(req.created_at);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (currentRequestsDateFilter === 'today') {
+            if (reqDate < today) return false;
+          } else if (currentRequestsDateFilter === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (reqDate < yesterday || reqDate >= today) return false;
+          } else if (currentRequestsDateFilter === '3days') {
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            if (reqDate < threeDaysAgo) return false;
+          }
+        }
+
+        // Custom date range
+        if (dateFrom && req.created_at) {
+          if (new Date(req.created_at) < new Date(dateFrom)) return false;
+        }
+        if (dateTo && req.created_at) {
+          if (new Date(req.created_at) > new Date(dateTo + 'T23:59:59')) return false;
+        }
+
+        return true;
+      });
+
+      renderRequestsTable(filtered);
+    }
+
+    function renderRequestsTable(requests) {
+      const tbody = document.getElementById('requestsTable');
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = requests.map(req => `
+        <tr>
+          <td>${req.id}</td>
+          <td>${new Date(req.created_at).toLocaleDateString()}</td>
+          <td>${req.department || ''}</td>
+          <td>${req.month || ''}</td>
+          <td>${req.slot_number || ''}</td>
+          <td>${req.campaign_name || ''}</td>
+          <td><span class="badge badge-${req.status?.toLowerCase() || 'pending'}">${req.status || 'Pending'}</span></td>
+          <td class="action-btns">
+            ${req.status === 'Working' ? `<button class="btn btn-warning" onclick="updateRequestStatus(${req.id}, 'Live')">🔴 Live</button>` : ''}
+            ${req.status === 'Live' ? `<button class="btn btn-complete" onclick="updateRequestStatus(${req.id}, 'Completed')">✅ Complete</button>` : ''}
+            <button class="btn btn-danger" onclick="updateRequestStatus(${req.id}, 'Rejected')">❌ Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Product Suggestions Filters
+    function filterProductsByDate(period) {
+      currentProductsDateFilter = period;
+      document.querySelectorAll('#tab-products .date-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      if (period !== 'custom') {
+        document.getElementById('productsDateFrom').value = '';
+        document.getElementById('productsDateTo').value = '';
+      }
+
+      filterProducts();
+    }
+
+    function filterProducts() {
+      const statusFilter = document.getElementById('productsStatusFilter').value;
+      const searchText = document.getElementById('productsSearch').value.toLowerCase();
+      const dateFrom = document.getElementById('productsDateFrom').value;
+      const dateTo = document.getElementById('productsDateTo').value;
+
+      let filtered = allProductSuggestions.filter(prod => {
+        if (statusFilter !== 'all' && prod.status !== statusFilter) return false;
+
+        if (searchText && !prod.product_link?.toLowerCase().includes(searchText) && 
+            !prod.category?.toLowerCase().includes(searchText)) return false;
+
+        if (currentProductsDateFilter !== 'all' && prod.created_at) {
+          const prodDate = new Date(prod.created_at);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (currentProductsDateFilter === 'today') {
+            if (prodDate < today) return false;
+          } else if (currentProductsDateFilter === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (prodDate < yesterday || prodDate >= today) return false;
+          } else if (currentProductsDateFilter === '3days') {
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            if (prodDate < threeDaysAgo) return false;
+          }
+        }
+
+        if (dateFrom && prod.created_at) {
+          if (new Date(prod.created_at) < new Date(dateFrom)) return false;
+        }
+        if (dateTo && prod.created_at) {
+          if (new Date(prod.created_at) > new Date(dateTo + 'T23:59:59')) return false;
+        }
+
+        return true;
+      });
+
+      renderProductsTable(filtered);
+    }
+
+    function renderProductsTable(products) {
+      const tbody = document.getElementById('productsTable');
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No products found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = products.map(prod => `
+        <tr>
+          <td>${prod.id}</td>
+          <td>${new Date(prod.created_at).toLocaleDateString()}</td>
+          <td><a href="${prod.product_link}" target="_blank" style="color:#1976D2;">View</a></td>
+          <td>${prod.category || ''}</td>
+          <td>${prod.margin_percentage || ''}%</td>
+          <td><span class="badge badge-${prod.status?.toLowerCase() || 'pending'}">${prod.status || 'Pending'}</span></td>
+          <td>${prod.page_name || '-'}</td>
+          <td>${prod.slot_date || '-'}</td>
+          <td>${prod.slot_number || '-'}</td>
+          <td class="action-btns">
+            ${prod.status === 'Pending' ? `<button class="btn btn-success" onclick="approveProduct(${prod.id})">✅ Approve</button>` : ''}
+            ${prod.status === 'Pending' ? `<button class="btn btn-danger" onclick="rejectProduct(${prod.id})">❌ Reject</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Content Bookings Filters
+    function filterContentByDate(period) {
+      currentContentDateFilter = period;
+      document.querySelectorAll('#tab-content .date-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      if (period !== 'custom') {
+        document.getElementById('contentDateFrom').value = '';
+        document.getElementById('contentDateTo').value = '';
+      }
+
+      filterContentBookings();
+    }
+
+    function filterContentBookings() {
+      const statusFilter = document.getElementById('contentStatusFilter').value;
+      const searchText = document.getElementById('contentSearch').value.toLowerCase();
+      const dateFrom = document.getElementById('contentDateFrom').value;
+      const dateTo = document.getElementById('contentDateTo').value;
+
+      let filtered = allContentBookings.filter(content => {
+        if (statusFilter !== 'all' && content.studio_status !== statusFilter && !content.head_approved) return false;
+        if (statusFilter === 'Approved' && !content.head_approved) return false;
+
+        const category = content.content_details?.split('-')[1]?.trim() || '';
+        if (searchText && !category.toLowerCase().includes(searchText) && 
+            !content.product_code?.toLowerCase().includes(searchText)) return false;
+
+        if (currentContentDateFilter !== 'all' && content.slot_date) {
+          const contentDate = new Date(content.slot_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (currentContentDateFilter === 'today') {
+            if (contentDate < today) return false;
+          } else if (currentContentDateFilter === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (contentDate < yesterday || contentDate >= today) return false;
+          } else if (currentContentDateFilter === '3days') {
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            if (contentDate < threeDaysAgo) return false;
+          }
+        }
+
+        if (dateFrom && content.slot_date) {
+          if (new Date(content.slot_date) < new Date(dateFrom)) return false;
+        }
+        if (dateTo && content.slot_date) {
+          if (new Date(content.slot_date) > new Date(dateTo + 'T23:59:59')) return false;
+        }
+
+        return true;
+      });
+
+      renderContentTable(filtered);
+    }
+
+    function renderContentTable(bookings) {
+      const tbody = document.getElementById('contentTable');
+      if (bookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No content bookings found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bookings.map(item => {
+        const category = item.content_details?.split('-')[1]?.trim() || 'N/A';
+        return `
+          <tr>
+            <td>${item.slot_date}</td>
+            <td>${item.slot_number}</td>
+            <td>${category}</td>
+            <td>${item.product_code || '-'}</td>
+            <td><span class="badge badge-${item.head_approved ? 'approved' : (item.studio_status?.toLowerCase().replace(' ', '-') || 'received')}">${item.head_approved ? 'Approved' : (item.studio_status || 'Received')}</span></td>
+            <td>${item.go_live_date || '-'}</td>
+            <td class="action-btns">
+              ${!item.head_approved && item.studio_status === 'Submitted for Review' ? `<button class="btn btn-success" onclick="approveContent(${item.id})">✅ Approve</button>` : ''}
+              ${!item.head_approved ? `<button class="btn btn-danger" onclick="rejectContent(${item.id})">❌ Reject</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    </script>
 </body>
 </html>
-
 
