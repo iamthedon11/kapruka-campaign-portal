@@ -1162,6 +1162,31 @@ async function deleteHotProduct(id) {
     throw error;
   }
 }
+// HOT PRODUCTS UPDATE
+async function updateHotProduct(productId, updateData) {
+  try {
+    const data = {};
+
+    if (updateData.listed !== undefined) {
+      data.listed = updateData.listed;
+    }
+
+    if (updateData.kapruka_link !== undefined) {
+      data.kapruka_link = updateData.kapruka_link || null;
+    }
+
+    if (updateData.salesCount !== undefined) {
+      data.sales_count = parseInt(updateData.salesCount) || 0;
+    }
+
+    await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
+    return { success: true };
+  } catch (error) {
+    console.error('updateHotProduct error:', error);
+    throw error;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // PRODUCT PERFORMANCE API
 // ═══════════════════════════════════════════════════════════════
@@ -1314,30 +1339,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 
   } catch (error) {
     console.error('searchProductPerformance error:', error);
-    throw error;
-  }
-}
-// HOT PRODUCTS UPDATE
-async function updateHotProduct(productId, updateData) {
-  try {
-    const data = {};
-
-    if (updateData.listed !== undefined) {
-      data.listed = updateData.listed;
-    }
-
-    if (updateData.kapruka_link !== undefined) {
-      data.kapruka_link = updateData.kapruka_link || null;
-    }
-
-    if (updateData.salesCount !== undefined) {
-      data.sales_count = parseInt(updateData.salesCount) || 0;
-    }
-
-    await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
-    return { success: true };
-  } catch (error) {
-    console.error('updateHotProduct error:', error);
     throw error;
   }
 }
