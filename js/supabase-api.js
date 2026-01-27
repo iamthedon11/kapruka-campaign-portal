@@ -68,7 +68,7 @@ function getDayName(dayNumber) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SLOT AVAILABILITY FUNCTIONS
+// SLOT AVAILABILITY FUNCTIONS (UPDATED)
 // ═══════════════════════════════════════════════════════════════
 
 async function getAvailableSlotsForPage(pageName) {
@@ -93,7 +93,7 @@ async function getAvailableSlotsForPage(pageName) {
     const availableDates = [];
     const today = new Date();
     
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < 14; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
       
@@ -102,9 +102,17 @@ async function getAvailableSlotsForPage(pageName) {
       }
     }
     
-    // Get already booked slots
-    const bookedSlots = await supabaseQuery(
-      `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved&slot_date=gte.${today.toISOString().split('T')[0]}`
+    // ✅ CHECK BOTH product_suggestions AND studio_calendar
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Get booked slots from product_suggestions
+    const bookedFromProducts = await supabaseQuery(
+      `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved&slot_date=gte.${todayStr}`
+    );
+    
+    // ✅ NEW: Get booked slots from studio_calendar (includes manual bookings)
+    const bookedFromStudio = await supabaseQuery(
+      `studio_calendar?page_name=eq.${encodeURIComponent(pageName)}&booking_status=eq.booked&date=gte.${todayStr}`
     );
     
     // Build availability map
@@ -112,9 +120,18 @@ async function getAvailableSlotsForPage(pageName) {
     
     for (const date of availableDates) {
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
-        const isBooked = bookedSlots.some(
+        // Check if booked in product_suggestions
+        const isBookedInProducts = bookedFromProducts.some(
           s => s.slot_date === date && s.slot_number === slotNum
         );
+        
+        // ✅ NEW: Check if booked in studio_calendar
+        const isBookedInStudio = bookedFromStudio.some(
+          s => s.date === date && s.slot_number === slotNum
+        );
+        
+        // Slot is booked if found in EITHER table
+        const isBooked = isBookedInProducts || isBookedInStudio;
         
         slots.push({
           date: date,
@@ -1347,4 +1364,3 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     throw error;
   }
 }
-
