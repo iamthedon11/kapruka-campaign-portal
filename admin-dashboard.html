@@ -1314,9 +1314,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
 
       <!-- ============================================ -->
       <!-- DM APPROVALS TAB -->
@@ -1357,9 +1354,10 @@
               <thead>
                 <tr>
                   <th>Content ID</th>
+                  <th>Date Approved</th>
                   <th>Source</th>
                   <th>Page</th>
-                  <th>Scheduled Date</th>
+                  <th>Go Live Date</th>
                   <th>Drive Link</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -1367,7 +1365,7 @@
               </thead>
               <tbody id="dmApprovalsTable">
                 <tr>
-                  <td colspan="7" style="text-align:center; padding:40px;">
+                  <td colspan="8" style="text-align:center; padding:40px;">
                     Loading...
                   </td>
                 </tr>
@@ -1378,7 +1376,9 @@
       </div>
 
     </div>
-    <script src="js/supabase-api.js"></script>
+  </div>
+
+  <script src="js/supabase-api.js"></script>
   <script>
     // ═══════════════════════════════════════════════════════════
     // GLOBAL VARIABLES
@@ -2963,6 +2963,8 @@
           const studioItem = await getStudioCalendarItem(dm.content_id);
           if (studioItem) {
             dm.studio_data = studioItem;
+            dm.page_name = studioItem.pagename;
+            dm.scheduled_live_date = studioItem.date;
           }
         }
 
@@ -2972,7 +2974,7 @@
         hideLoading();
         document.getElementById('dmApprovalsTable').innerHTML = `
           <tr>
-            <td colspan="7" style="text-align:center; padding:40px; color:#d32f2f;">
+            <td colspan="8" style="text-align:center; padding:40px; color:#d32f2f;">
               Error: ${error.message}
             </td>
           </tr>
@@ -3008,7 +3010,7 @@
       if (dmApprovals.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align:center; padding:40px;">
+            <td colspan="8" style="text-align:center; padding:40px;">
               No DM approvals found
             </td>
           </tr>
@@ -3020,6 +3022,10 @@
         let badgeClass = 'badge-pending';
         if (dm.dm_status === 'Approved') badgeClass = 'badge-approved';
         if (dm.dm_status === 'Rejected') badgeClass = 'badge-rejected';
+
+        const approvedDate = dm.studio_data && dm.studio_data.headapprovedat 
+          ? new Date(dm.studio_data.headapprovedat).toLocaleDateString()
+          : new Date(dm.created_at).toLocaleDateString();
 
         const driveLinkDisplay = dm.drive_link 
           ? `<a href="${dm.drive_link}" target="_blank" style="color:#5e3a8e;">View</a>`
@@ -3042,6 +3048,7 @@
         return `
           <tr>
             <td>${dm.content_id}</td>
+            <td>${approvedDate}</td>
             <td><span class="badge badge-received">${dm.source_type}</span></td>
             <td>${dm.page_name || '—'}</td>
             <td>${dm.scheduled_live_date || '—'}</td>
