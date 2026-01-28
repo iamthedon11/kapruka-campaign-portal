@@ -181,6 +181,7 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
 async function upsertStudioCalendarEntry(entry) {
   const payload = {
     date: entry.date,
+    department: entry.department || null,
     source_type: entry.source_type,
     source_id: entry.source_id || null,
     product_code: entry.product_code || null,
@@ -467,6 +468,7 @@ async function addExtraContent(extra) {
 
   await upsertStudioCalendarEntry({
     date: saved.date,
+    department: saved.department,
     source_type: 'extra_content',
     source_id: saved.id,
     product_code: null,
@@ -484,6 +486,7 @@ async function addExtraContent(extra) {
 async function updateExtraContent(id, extra) {
   const row = {
     date: extra.date,
+    department: extra.department,
     page_name: extra.page_name,
     format: extra.format || '',
     content_details: extra.content_details,
@@ -494,6 +497,7 @@ async function updateExtraContent(id, extra) {
 
   await upsertStudioCalendarEntry({
     date: extra.date,
+    department: extra.department,
     source_type: 'extra_content',
     source_id: id,
     product_code: null,
