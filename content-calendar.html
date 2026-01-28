@@ -133,6 +133,24 @@
       background: linear-gradient(135deg, #FFE5E5, #FFF0F0);
       border-color: #FF69B4;
     }
+    /* ✅ NEW: Full booked indicator */
+    .day-cell.fully-booked {
+      background: linear-gradient(135deg, #C8E6C9, #A5D6A7);
+      border-color: #4CAF50;
+      border-width: 3px;
+    }
+    .fully-booked-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #4CAF50;
+      color: white;
+      font-size: 8px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
     .day-number {
       font-weight: 700;
       font-size: 16px;
@@ -151,22 +169,41 @@
     .slot-preview {
       font-size: 9px;
       background: rgba(94,58,142,0.1);
-      padding: 3px 6px;
+      padding: 4px 6px;
       border-radius: 4px;
       margin: 2px 0;
       color: #5e3a8e;
       font-weight: 500;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .slot-preview:hover {
+      background: rgba(94,58,142,0.2);
+      transform: scale(1.02);
     }
     .slot-preview.booked {
       background: #d4edda;
       color: #155724;
+      border-left: 3px solid #28a745;
     }
     .slot-preview.pending {
       background: #fff3cd;
       color: #856404;
+      border-left: 3px solid #ffc107;
+    }
+    /* ✅ NEW: Rejected slot style */
+    .slot-preview.rejected {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 3px solid #dc3545;
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .slot-code {
+      font-weight: 700;
+      font-size: 10px;
+      margin-top: 2px;
+      display: block;
     }
     .loading {
       position: fixed;
@@ -240,6 +277,20 @@
       margin-bottom: 20px;
       text-align: center;
     }
+    /* ✅ NEW: Fully booked message */
+    .fully-booked-message {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin: 20px 0;
+      font-weight: 600;
+    }
+    .fully-booked-message .icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
     .slots-container {
       display: grid;
       gap: 15px;
@@ -269,6 +320,34 @@
       border-color: #e8e8e8;
       box-shadow: none;
     }
+    .slot-card.booked.clickable {
+      cursor: pointer;
+      opacity: 1;
+      background: #e8f5e9;
+      border-color: #4caf50;
+    }
+    .slot-card.booked.clickable:hover {
+      border-color: #388e3c;
+      box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+    }
+    /* ✅ NEW: Rejected slot card */
+    .slot-card.rejected {
+      background: #fff5f5;
+      border-color: #ffcdd2;
+      opacity: 0.7;
+    }
+    .slot-card.rejected .slot-title {
+      text-decoration: line-through;
+      color: #999;
+    }
+    .rejection-badge {
+      background: #dc3545;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
     .slot-header {
       display: flex;
       justify-content: space-between;
@@ -287,6 +366,29 @@
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
+    }
+    .booking-details {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .booking-details strong {
+      display: block;
+      color: #5e3a8e;
+      margin-bottom: 5px;
+    }
+    .booking-details .product-code {
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: #155724;
+      background: #d4edda;
+      padding: 5px 10px;
+      border-radius: 5px;
+      display: inline-block;
+      margin-top: 5px;
     }
     .form-group {
       margin-bottom: 20px;
@@ -404,7 +506,7 @@
     async function loadCalendar() {
       try {
         showLoading();
-        
+
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                            'July', 'August', 'September', 'October', 'November', 'December'];
         document.getElementById('monthDisplay').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
@@ -412,7 +514,7 @@
         calendarData = await getCalendarData(currentMonth, currentYear);
         console.log('Calendar Data:', calendarData);
         renderCalendar();
-        
+
         hideLoading();
       } catch (error) {
         hideLoading();
@@ -462,15 +564,15 @@
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // ✅ FIXED: Custom theme colors applied
+    // ✅ FIXED: Rejected bookings are now available for re-booking
+    // ✅ ADDED: "Fully Booked" badge when all slots are taken
     // ═══════════════════════════════════════════════════════════════
     function createDayCell(day, dateStr, dayBookings) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
       const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
-      
-      // ✅ NEW: Apply custom colors for seasonal themes
+
       const hasSeasonal = themes.some(t => t.is_seasonal);
       if (hasSeasonal) {
         cell.classList.add('seasonal');
@@ -482,7 +584,7 @@
       }
 
       const themeNames = themes.map(t => t.theme_name).join(' + ');
-      
+
       cell.innerHTML = `
         <div class="day-number">${day}</div>
         ${themes.length > 0 ? `<div class="day-theme">${themeNames}</div>` : ''}
@@ -490,38 +592,62 @@
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
 
+      // ✅ FIX: Only count Approved/Pending bookings (NOT Rejected)
+      const activeBookings = dayBookings.filter(b => b.status === 'Approved' || b.status === 'Pending');
+
       const allSlotsFilled = availableSlots.length > 0 && 
         availableSlots.every(slot => 
-          dayBookings.some(b => b.slot_number === slot.slot_number && 
-                               (b.status === 'Approved' || b.status === 'Pending'))
+          activeBookings.some(b => b.slot_number === slot.slot_number)
         );
 
       if (allSlotsFilled) {
-        cell.style.background = 'linear-gradient(135deg, #C8E6C9, #A5D6A7)';
-        cell.style.borderColor = '#4CAF50';
-        cell.style.borderWidth = '3px';
+        cell.classList.add('fully-booked');
+        // ✅ ADD: Fully booked badge
+        const badge = document.createElement('div');
+        badge.className = 'fully-booked-badge';
+        badge.textContent = 'FULL';
+        cell.appendChild(badge);
       }
 
+      // Show all bookings (including rejected ones)
       if (dayBookings.length > 0) {
         dayBookings.forEach(booking => {
           const slotDiv = document.createElement('div');
           slotDiv.className = 'slot-preview';
-          
+
           if (booking.status === 'Approved') {
             slotDiv.classList.add('booked');
           } else if (booking.status === 'Pending') {
             slotDiv.classList.add('pending');
+          } else if (booking.status === 'Rejected') {
+            slotDiv.classList.add('rejected');
           }
-          
-          slotDiv.innerHTML = `<span>${booking.category}</span><span>●</span>`;
+
+          const statusIcon = booking.status === 'Approved' ? '✓' : 
+                            booking.status === 'Pending' ? '⏳' : '✗';
+          slotDiv.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+              <span>${booking.category}</span>
+              <span>${statusIcon}</span>
+            </div>
+            ${booking.product_code ? `<span class="slot-code">📦 ${booking.product_code}</span>` : ''}
+          `;
+
+          slotDiv.style.cursor = 'pointer';
+          slotDiv.onclick = (e) => {
+            e.stopPropagation();
+            showBookingDetails(booking, dateStr, themes);
+          };
+
           cell.appendChild(slotDiv);
         });
       }
 
+      // ✅ FIX: Show available slots (excluding only active bookings, not rejected ones)
       if (availableSlots.length > 0) {
         availableSlots.forEach(slot => {
-          const isSlotBooked = dayBookings.some(b => b.slot_number === slot.slot_number);
-          
+          const isSlotBooked = activeBookings.some(b => b.slot_number === slot.slot_number);
+
           if (!isSlotBooked) {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'slot-preview';
@@ -531,8 +657,9 @@
         });
       }
 
+      // ✅ FIX: Check for available slots (rejected slots are now available)
       const hasAvailableSlots = availableSlots.some(slot => 
-        !dayBookings.some(b => b.slot_number === slot.slot_number)
+        !activeBookings.some(b => b.slot_number === slot.slot_number)
       );
 
       if (themes.length > 0 && hasAvailableSlots) {
@@ -548,6 +675,109 @@
       return cell;
     }
 
+    function showBookingDetails(booking, date, themes) {
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modalContent');
+
+      const dateObj = new Date(date + 'T00:00:00');
+      const formattedDate = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+      });
+
+      const themeNames = Array.isArray(themes) 
+        ? themes.map(t => t.theme_name).join(' + ') 
+        : themes.theme_name || 'No Theme';
+
+      let statusBadge;
+      if (booking.status === 'Approved') {
+        statusBadge = '<span style="background:#28a745;color:white;padding:5px 15px;border-radius:20px;font-size:12px;">✓ Approved</span>';
+      } else if (booking.status === 'Pending') {
+        statusBadge = '<span style="background:#ffc107;color:#856404;padding:5px 15px;border-radius:20px;font-size:12px;">⏳ Pending</span>';
+      } else if (booking.status === 'Rejected') {
+        statusBadge = '<span style="background:#dc3545;color:white;padding:5px 15px;border-radius:20px;font-size:12px;">✗ Rejected</span>';
+      }
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <h2>Booking Details</h2>
+          <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+
+        <div class="date-info">
+          <strong>${formattedDate}</strong>
+          <div style="margin-top:5px;font-size:14px;">${themeNames}</div>
+        </div>
+
+        <div style="background:#f9f9f9;padding:20px;border-radius:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="color:#5e3a8e;margin:0;">Slot ${booking.slot_number}</h3>
+            ${statusBadge}
+          </div>
+
+          <div style="margin-bottom:15px;">
+            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Category</strong>
+            <div style="background:#FFD700;color:#5e3a8e;padding:8px 15px;border-radius:8px;display:inline-block;margin-top:5px;font-weight:600;">
+              ${booking.category}
+            </div>
+          </div>
+
+          <div style="margin-bottom:15px;">
+            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Product Code</strong>
+            <div style="background:#d4edda;color:#155724;padding:10px 15px;border-radius:8px;margin-top:5px;font-family:monospace;font-size:16px;font-weight:700;">
+              📦 ${booking.product_code || 'N/A'}
+            </div>
+          </div>
+
+          ${booking.product_link ? `
+          <div style="margin-bottom:15px;">
+            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Product Link</strong>
+            <div style="margin-top:5px;">
+              <a href="${booking.product_link}" target="_blank" style="color:#5e3a8e;word-break:break-all;">
+                🔗 ${booking.product_link}
+              </a>
+            </div>
+          </div>
+          ` : ''}
+
+          ${booking.rejection_reason ? `
+          <div style="margin-bottom:15px;">
+            <strong style="color:#dc3545;font-size:12px;text-transform:uppercase;">❌ Rejection Reason</strong>
+            <div style="background:#f8d7da;color:#721c24;padding:10px 15px;border-radius:8px;margin-top:5px;">
+              ${booking.rejection_reason}
+            </div>
+          </div>
+          ` : ''}
+
+          <div style="margin-bottom:15px;">
+            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Submitted By</strong>
+            <div style="margin-top:5px;color:#333;">
+              👤 ${booking.submitted_by || 'Unknown'}
+            </div>
+          </div>
+
+          <div>
+            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Submitted On</strong>
+            <div style="margin-top:5px;color:#333;">
+              📅 ${booking.created_at ? new Date(booking.created_at).toLocaleString() : 'N/A'}
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-submit" onclick="closeModal()" style="margin-top:20px;background:#6c757d;">
+          Close
+        </button>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ UPDATED: Show "Fully Booked" message when no slots available
+    // ✅ FIXED: Rejected slots are now available for booking
+    // ═══════════════════════════════════════════════════════════════
     function openBookingModal(date, themes, slots, bookings) {
       selectedDate = date;
       const modal = document.getElementById('modal');
@@ -570,7 +800,7 @@
           <h2>Book Content Slot</h2>
           <button class="close-btn" onclick="closeModal()">×</button>
         </div>
-        
+
         <div class="date-info">
           <strong>${formattedDate}</strong>
           <div style="margin-top:5px;font-size:14px;">${themeNames}</div>
@@ -593,27 +823,70 @@
       `;
 
       const slotsContainer = document.getElementById('slotsContainer');
-      
+
+      // ✅ FIX: Only treat Approved/Pending as booked (NOT Rejected)
+      let hasAvailableSlots = false;
+
       slots.forEach(slot => {
         const existingBooking = bookings.find(b => b.slot_number === slot.slot_number);
-        const isBooked = existingBooking && existingBooking.status !== 'Rejected';
-        
-        const slotCard = document.createElement('div');
-        slotCard.className = 'slot-card' + (isBooked ? ' booked' : '');
-        slotCard.innerHTML = `
-          <div class="slot-header">
-            <div class="slot-title">Slot ${slot.slot_number}</div>
-            <div class="slot-category">${slot.category}</div>
-          </div>
-          ${isBooked ? `<div style="font-size:12px;color:#666;">✓ Booked by ${existingBooking.submitted_by || 'someone'}</div>` : ''}
-        `;
+        const isBooked = existingBooking && (existingBooking.status === 'Approved' || existingBooking.status === 'Pending');
 
-        if (!isBooked) {
+        if (!isBooked) hasAvailableSlots = true;
+
+        const slotCard = document.createElement('div');
+
+        if (isBooked) {
+          slotCard.className = 'slot-card booked clickable';
+          slotCard.innerHTML = `
+            <div class="slot-header">
+              <div class="slot-title">Slot ${slot.slot_number}</div>
+              <div class="slot-category">${slot.category}</div>
+            </div>
+            <div class="booking-details">
+              <strong>Booked by: ${existingBooking.submitted_by || 'someone'}</strong>
+              <div class="product-code">${existingBooking.product_code || 'No code'}</div>
+            </div>
+          `;
+          slotCard.onclick = () => showBookingDetails(existingBooking, date, themes);
+        } else if (existingBooking && existingBooking.status === 'Rejected') {
+          // ✅ Show rejected bookings but allow re-booking
+          slotCard.className = 'slot-card rejected';
+          slotCard.innerHTML = `
+            <div class="slot-header">
+              <div class="slot-title">Slot ${slot.slot_number}</div>
+              <div class="slot-category">${slot.category}</div>
+            </div>
+            <div style="margin-top:10px;padding:8px;background:#fff0f0;border-radius:6px;font-size:12px;color:#666;">
+              <span class="rejection-badge">REJECTED</span>
+              <div style="margin-top:5px;font-style:italic;">${existingBooking.rejection_reason || 'Previously rejected'}</div>
+              <div style="margin-top:8px;font-weight:600;color:#5e3a8e;">✨ Available for new booking</div>
+            </div>
+          `;
+          slotCard.onclick = () => selectSlot(slot, slotCard);
+        } else {
+          slotCard.className = 'slot-card';
+          slotCard.innerHTML = `
+            <div class="slot-header">
+              <div class="slot-title">Slot ${slot.slot_number}</div>
+              <div class="slot-category">${slot.category}</div>
+            </div>
+          `;
           slotCard.onclick = () => selectSlot(slot, slotCard);
         }
 
         slotsContainer.appendChild(slotCard);
       });
+
+      // ✅ NEW: Show "Fully Booked" message if no available slots
+      if (!hasAvailableSlots) {
+        slotsContainer.innerHTML = `
+          <div class="fully-booked-message">
+            <div class="icon">🎉</div>
+            <div style="font-size:20px;margin-bottom:10px;">All Slots Booked!</div>
+            <div style="font-size:14px;opacity:0.9;">This day is fully booked. Check back later or contact admin.</div>
+          </div>
+        ` + slotsContainer.innerHTML;
+      }
 
       modal.style.display = 'flex';
     }
@@ -639,7 +912,7 @@
 
       try {
         showLoading();
-        
+
         const bookingData = {
           date: selectedDate,
           slotNumber: selectedSlot.slot_number,
@@ -650,12 +923,12 @@
         };
 
         await submitContentBooking(bookingData);
-        
+
         hideLoading();
         closeModal();
         alert('✅ Booking submitted successfully!\n\nYour booking is pending admin approval.');
         loadCalendar();
-        
+
       } catch (error) {
         hideLoading();
         console.error('Submit error:', error);
