@@ -854,6 +854,7 @@
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar Approval</button>
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
+        <button class="tab-btn" onclick="switchTab('dmapprovals')">✅ DM Approvals</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
@@ -1316,7 +1317,68 @@
     </div>
   </div>
 
-  <script src="js/supabase-api.js"></script>
+
+      <!-- ============================================ -->
+      <!-- DM APPROVALS TAB -->
+      <!-- ============================================ -->
+      <div id="tab-dmapprovals" class="tab-content">
+        <div class="card">
+          <h2>✅ Digital Marketing Approvals</h2>
+          <p style="color:#666; margin-bottom:25px;">
+            Content approved by Head, pending DM review
+          </p>
+
+          <!-- Filters -->
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>🔍 Search</label>
+              <input 
+                type="text" 
+                id="dmSearch" 
+                placeholder="Search by page, content ID..." 
+                oninput="filterDmApprovals()"
+              />
+            </div>
+
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="dmStatusFilter" onchange="filterDmApprovals()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Content ID</th>
+                  <th>Source</th>
+                  <th>Page</th>
+                  <th>Scheduled Date</th>
+                  <th>Drive Link</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dmApprovalsTable">
+                <tr>
+                  <td colspan="7" style="text-align:center; padding:40px;">
+                    Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <script src="js/supabase-api.js"></script>
   <script>
     // ═══════════════════════════════════════════════════════════
     // GLOBAL VARIABLES
@@ -2883,6 +2945,212 @@
         alert('Error: ' + error.message);
       }
     }
+
+
+    let allDmApprovals = [];
+
+    // ═══════════════════════════════════════════════════════════
+    // DM APPROVALS
+    // ═══════════════════════════════════════════════════════════
+
+    async function loadDmApprovals() {
+      try {
+        showLoading();
+        allDmApprovals = await getDmApprovals();
+
+        // Enrich with studio_calendar data
+        for (const dm of allDmApprovals) {
+          const studioItem = await getStudioCalendarItem(dm.content_id);
+          if (studioItem) {
+            dm.studio_data = studioItem;
+          }
+        }
+
+        renderDmApprovalsTable(allDmApprovals);
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        document.getElementById('dmApprovalsTable').innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:40px; color:#d32f2f;">
+              Error: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function filterDmApprovals() {
+      const searchTerm = document.getElementById('dmSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('dmStatusFilter').value;
+
+      let filtered = allDmApprovals;
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(dm => 
+          (dm.page_name && dm.page_name.toLowerCase().includes(searchTerm)) ||
+          (dm.content_id && dm.content_id.toString().includes(searchTerm))
+        );
+      }
+
+      // Status filter
+      if (statusFilter) {
+        filtered = filtered.filter(dm => dm.dm_status === statusFilter);
+      }
+
+      renderDmApprovalsTable(filtered);
+    }
+
+    function renderDmApprovalsTable(dmApprovals) {
+      const tbody = document.getElementById('dmApprovalsTable');
+
+      if (dmApprovals.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:40px;">
+              No DM approvals found
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = dmApprovals.map(dm => {
+        let badgeClass = 'badge-pending';
+        if (dm.dm_status === 'Approved') badgeClass = 'badge-approved';
+        if (dm.dm_status === 'Rejected') badgeClass = 'badge-rejected';
+
+        const driveLinkDisplay = dm.drive_link 
+          ? `<a href="${dm.drive_link}" target="_blank" style="color:#5e3a8e;">View</a>`
+          : '<span style="color:#999;">—</span>';
+
+        const actions = dm.dm_status === 'Pending' 
+          ? `
+            <button class="btn btn-success" onclick="approveDm(${dm.id})">
+              ✅ Approve
+            </button>
+            <button class="btn btn-danger" onclick="rejectDm(${dm.id})">
+              ❌ Reject
+            </button>
+            <button class="btn btn-warning" onclick="editDmLink(${dm.id})">
+              🔗 Edit Link
+            </button>
+          `
+          : `<span style="color:#999;">—</span>`;
+
+        return `
+          <tr>
+            <td>${dm.content_id}</td>
+            <td><span class="badge badge-received">${dm.source_type}</span></td>
+            <td>${dm.page_name || '—'}</td>
+            <td>${dm.scheduled_live_date || '—'}</td>
+            <td>${driveLinkDisplay}</td>
+            <td><span class="badge ${badgeClass}">${dm.dm_status}</span></td>
+            <td>
+              <div class="action-btns">
+                ${actions}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveDm(dmId) {
+      const dmName = prompt('Enter your name (DM):');
+      if (!dmName) return;
+
+      try {
+        showLoading();
+
+        const dm = allDmApprovals.find(d => d.id === dmId);
+        if (!dm) throw new Error('DM approval not found');
+
+        // Update dm_approvals
+        await updateDmApproval(dmId, {
+          dm_status: 'Approved',
+          approved_at: new Date().toISOString(),
+          dm_rejection_reason: null,
+          updated_at: new Date().toISOString()
+        });
+
+        // Update studio_calendar
+        await supabaseQuery(`studio_calendar?id=eq.${dm.content_id}`, 'PATCH', {
+          approval_status: 'Approved by DM',
+          dm_approved_by: dmName,
+          dm_approved_at: new Date().toISOString(),
+          dm_rejection_reason: null
+        });
+
+        hideLoading();
+        alert('✅ Content approved by DM!');
+        loadDmApprovals();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectDm(dmId) {
+      const reason = prompt('Enter rejection reason:');
+      if (!reason) return;
+
+      const dmName = prompt('Enter your name (DM):');
+      if (!dmName) return;
+
+      try {
+        showLoading();
+
+        const dm = allDmApprovals.find(d => d.id === dmId);
+        if (!dm) throw new Error('DM approval not found');
+
+        // Update dm_approvals
+        await updateDmApproval(dmId, {
+          dm_status: 'Rejected',
+          dm_rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        });
+
+        // Update studio_calendar
+        await supabaseQuery(`studio_calendar?id=eq.${dm.content_id}`, 'PATCH', {
+          approval_status: 'Rejected by DM',
+          studio_status: 'Rejected',
+          dm_rejection_reason: reason,
+          dm_approved_by: dmName
+        });
+
+        hideLoading();
+        alert('❌ Content rejected by DM');
+        loadDmApprovals();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function editDmLink(dmId) {
+      const dm = allDmApprovals.find(d => d.id === dmId);
+      if (!dm) return;
+
+      const newLink = prompt('Enter Google Drive link:', dm.drive_link || '');
+      if (newLink === null) return;
+
+      try {
+        showLoading();
+        await updateDmApproval(dmId, {
+          drive_link: newLink,
+          updated_at: new Date().toISOString()
+        });
+        hideLoading();
+        alert('🔗 Drive link updated!');
+        loadDmApprovals();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
 
     // Initialize
     currentStudioMonth = 1;
