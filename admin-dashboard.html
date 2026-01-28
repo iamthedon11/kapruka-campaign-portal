@@ -2659,16 +2659,19 @@
             }
             
             let displayText;
+            // PRIORITY 1: Check for department first (extra content)
             if (item.department) {
-            displayText = item.department;
+              displayText = item.department;
             }
+            // PRIORITY 2: If approved, show category + product code
             else if (item.head_approved) {
-            const category = item.content_details?.split('-')[1]?.trim() || '';
-            displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
             }
+            // PRIORITY 3: Show category or page name
             else {
-            const category = item.content_details?.split('-')[1]?.trim() || '';
-            displayText = category || item.page_name || 'Daily Post';
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = category || item.page_name || 'Daily Post';
             }
             
             slotDiv.innerHTML = `
@@ -3257,4 +3260,3 @@
   </script>
 </body>
 </html>
-
