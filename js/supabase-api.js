@@ -295,7 +295,11 @@ async function updateDmApproval(id, data) {
 async function updateStudioStatus(id, statusData) {
   const payload = {
     studio_status: statusData.studio_status
-  };
+  }
+  if (statusData.assigned_to !== undefined) {
+  payload.assigned_to = statusData.assigned_to;
+}  
+    ;
 
   // Map studio_status → approval_status for filters
   if (statusData.studio_status === 'Approved') {
