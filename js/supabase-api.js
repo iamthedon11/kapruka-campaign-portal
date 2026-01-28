@@ -454,6 +454,7 @@ async function updateStudioCompletion(id, data) {
 async function addExtraContent(extra) {
   const row = {
     date: extra.date,
+    department: extraData.department,
     page_name: extra.page_name,
     format: extra.format || '',
     content_details: extra.content_details,
