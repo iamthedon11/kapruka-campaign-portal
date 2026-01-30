@@ -154,6 +154,8 @@
       border-radius: var(--border-radius-lg);
       box-shadow: var(--shadow-lg);
       margin-bottom: 25px;
+      overflow-x: auto; /* FIX #3 - allow card horizontal scroll on narrow screens */
+      -webkit-overflow-scrolling: touch;
     }
 
     .card h2 {
@@ -654,12 +656,70 @@
       letter-spacing: 0.5px;
     }
 
-    .calendar-grid {
+    /* ===== STUDIO CALENDAR LAYOUT (RESPONSIVE) ===== */
+    .studio-calendar-wrapper {
+      overflow-x: auto; /* FIX #1 - allow horizontal scroll instead of breaking layout */
+      -webkit-overflow-scrolling: touch;
+      margin-top: 12px;
+    }
+
+    .calendar-container {
+      min-width: 100%;
+    }
+
+    .calendar-weekdays {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 12px;
-      margin-top: 20px;
+      margin-top: 12px;
     }
+
+    .calendar-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+      grid-template-columns: repeat(7, minmax(140px, 1fr)); /* FIX #2 - desktop base */
+    }
+
+    /* Mobile/Tablet breakpoints - progressive shrink of minimum cell width */
+    @media (max-width: 1200px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
+    }
+    @media (max-width: 992px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(100px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(80px, 1fr)); }
+      .month-nav { gap: 12px; }
+    }
+    @media (max-width: 480px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(60px, 1fr)); }
+      .month-nav { flex-direction: column; gap: 8px; align-items: stretch; }
+      .month-nav button { width: 100%; padding: 12px; font-size: 14px; }
+    }
+
+    /* Small floating add button for each day */
+    .day-add-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--primary-purple);
+      color: white;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    .day-add-btn:focus { outline: 2px solid rgba(255,215,0,0.4); }
 
     .calendar-day-header {
       background: var(--primary-purple);
@@ -748,6 +808,9 @@
       background: white;
       box-shadow: var(--shadow-sm);
       transition: var(--transition);
+      word-break: break-word; /* FIX #3 - wrap long text */
+      overflow-wrap: anywhere;
+      white-space: normal;
     }
 
     .slot-item:hover {
@@ -1275,64 +1338,72 @@
             </div>
           </div>
 
-          <div class="month-nav">
-            <button onclick="changeStudioMonth(-1)" title="Previous month" aria-label="Previous month">◀ Previous</button>
-            <h3 id="studioMonthTitle">January 2026</h3>
-            <button onclick="changeStudioMonth(1)" title="Next month" aria-label="Next month">Next ▶</button>
-          </div>
+          <div class="studio-calendar-wrapper">
+            <div class="calendar-container">
+              <div class="month-nav">
+                <button onclick="changeStudioMonth(-1)" title="Previous month" aria-label="Previous month">◀ Previous</button>
+                <h3 id="studioMonthTitle">January 2026</h3>
+                <button onclick="changeStudioMonth(1)" title="Next month" aria-label="Next month">Next ▶</button>
+              </div>
 
-          <!-- UPDATED: Added new filter options -->
-          <div style="margin-bottom:20px;">
-            <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
-            <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
-              <option value="all">All Content</option>
-              <option value="received">Not Started (Received)</option>
-              <option value="working">Working</option>
-              <option value="submitted">Submitted for Review</option>
-              <option value="resubmitted">Resubmitted for Review</option>
-              <option value="approved">Approved by Head</option>
-              <option value="rejectedhead">Rejected by Head</option>
-              <option value="approveddm">Approved by DM</option>
-              <option value="rejecteddm">Rejected by DM</option>
-            </select>
-            <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
-            <select id="studioPersonFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
-              <option value="all">All Team Members</option>
-              <option value="Ashani">Ashani</option>
-              <option value="Kasun">Kasun</option>
-              <option value="Amandi">Amandi</option>
-              <option value="Danoj">Danoj</option>
-              <option value="Kavindya">Kavindya</option>
-              <option value="unassigned">Unassigned</option>
-            </select>
+              <!-- Filters -->
+              <div class="calendar-filters" style="margin-bottom:20px;">
+                <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
+                <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+                  <option value="all">All Content</option>
+                  <option value="received">Not Started (Received)</option>
+                  <option value="working">Working</option>
+                  <option value="submitted">Submitted for Review</option>
+                  <option value="resubmitted">Resubmitted for Review</option>
+                  <option value="approved">Approved by Head</option>
+                  <option value="rejectedhead">Rejected by Head</option>
+                  <option value="approveddm">Approved by DM</option>
+                  <option value="rejecteddm">Rejected by DM</option>
+                </select>
+                <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
+                <select id="studioPersonFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
+                  <option value="all">All Team Members</option>
+                  <option value="Ashani">Ashani</option>
+                  <option value="Kasun">Kasun</option>
+                  <option value="Amandi">Amandi</option>
+                  <option value="Danoj">Danoj</option>
+                  <option value="Kavindya">Kavindya</option>
+                  <option value="unassigned">Unassigned</option>
+                </select>
 
-            <div style="font-size:12px;color:#666;margin-top:8px;">Select a person to filter the calendar. Choose <strong>Unassigned</strong> to see unallocated slots.</div>
-          </div>
+                <div style="font-size:12px;color:#666;margin-top:8px;">Select a person to filter the calendar. Choose <strong>Unassigned</strong> to see unallocated slots.</div>
+              </div>
 
-          <!-- Legend: quick reference -->
-          <div style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:#444;">
-            <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
-              <span style="font-weight:700;color:#1976D2;">S#</span>
-              <span style="color:#666;">Slot number</span>
+              <!-- Legend: quick reference -->
+              <div class="calendar-legend" style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:#444;">
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#1976D2;">S#</span>
+                  <span style="color:#666;">Slot number</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#E65100;">●</span>
+                  <span style="color:#666;">Status badges show progress</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#1976D2;">👤</span>
+                  <span style="color:#666;">Assigned person (when set)</span>
+                </div>
+              </div>
+
+              <div class="calendar-weekdays">
+                <div class="calendar-day-header">Sun</div>
+                <div class="calendar-day-header">Mon</div>
+                <div class="calendar-day-header">Tue</div>
+                <div class="calendar-day-header">Wed</div>
+                <div class="calendar-day-header">Thu</div>
+                <div class="calendar-day-header">Fri</div>
+                <div class="calendar-day-header">Sat</div>
+              </div>
+
+              <div class="calendar-grid" id="studioCalendarGrid" role="grid" aria-label="Studio calendar grid">
+                <!-- days injected here -->
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
-              <span style="font-weight:700;color:#E65100;">●</span>
-              <span style="color:#666;">Status badges show progress</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
-              <span style="font-weight:700;color:#1976D2;">👤</span>
-              <span style="color:#666;">Assigned person (when set)</span>
-            </div>
-          </div>
-
-          <div class="calendar-grid" id="studioCalendarGrid">
-            <div class="calendar-day-header">Sun</div>
-            <div class="calendar-day-header">Mon</div>
-            <div class="calendar-day-header">Tue</div>
-            <div class="calendar-day-header">Wed</div>
-            <div class="calendar-day-header">Thu</div>
-            <div class="calendar-day-header">Fri</div>
-            <div class="calendar-day-header">Sat</div>
           </div>
         </div>
       </div>
@@ -2705,9 +2776,8 @@
     function renderCalendarGrid(data, monthThemes = []) {
       const grid = document.getElementById('studioCalendarGrid');
       
-      while (grid.children.length > 7) {
-        grid.removeChild(grid.lastChild);
-      }
+      // Clear entirely (weekdays are now rendered separately)
+      grid.innerHTML = '';
 
       const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
       const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
@@ -2730,7 +2800,16 @@
         
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
-        
+        dayDiv.style.position = 'relative';
+
+        // add per-day add button that pre-fills the modal date
+        const addBtn = document.createElement('button');
+        addBtn.className = 'day-add-btn';
+        addBtn.title = 'Add content to this date';
+        addBtn.textContent = '+';
+        addBtn.onclick = (e) => { e.stopPropagation(); openAddExtraContentModal(dateStr); };
+        dayDiv.appendChild(addBtn);
+
         const activeTheme = monthThemes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
         if (activeTheme) {
           dayDiv.style.borderTop = `4px solid ${activeTheme.theme_color}`;
@@ -3058,7 +3137,7 @@
       loadStudioCalendar();
     }
 
-    function openAddExtraContentModal() {
+    function openAddExtraContentModal(prefillDate = null) {
       const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
         <option value="${config.page}">${config.page}</option>
       `).join('');
@@ -3113,6 +3192,15 @@
       `;
 
       showModal(content);
+
+      // If a date was provided, pre-fill and lock the date field
+      if (prefillDate) {
+        const dateInput = document.getElementById('extraDate');
+        if (dateInput) {
+          dateInput.value = prefillDate;
+          dateInput.disabled = true;
+        }
+      }
 
       document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
