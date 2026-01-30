@@ -698,6 +698,20 @@
       box-shadow: var(--shadow-md);
     }
 
+    /* When an overlay is active, visually de-emphasize calendar and disable interaction */
+    .overlay-open .calendar-day,
+    .overlay-open .calendar-day * {
+      pointer-events: none !important;
+      user-select: none !important;
+      opacity: 0.6;
+      filter: blur(1px) saturate(0.9);
+    }
+
+    .overlay-open .tabs,
+    .overlay-open .tabs * {
+      pointer-events: none !important;
+    }
+
     .calendar-day.empty {
       background: #f5f5f5;
       cursor: default;
@@ -934,9 +948,9 @@
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
+  <div class="loading" id="loading" aria-hidden="true" role="status" aria-label="Loading overlay"><div class="spinner"></div></div>
+  <div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-content" id="modalContent" tabindex="-1"></div>
   </div>
 
   <div class="container">
@@ -1542,20 +1556,37 @@
     // UTILITY FUNCTIONS
     // ═══════════════════════════════════════════════════════════
     function showLoading() {
-      document.getElementById('loading').style.display = 'flex';
+      const loading = document.getElementById('loading');
+      loading.style.display = 'flex';
+      loading.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overlay-open');
     }
 
     function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
+      const loading = document.getElementById('loading');
+      loading.style.display = 'none';
+      loading.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overlay-open');
     }
 
     function showModal(content) {
+      const modal = document.getElementById('modal');
       document.getElementById('modalContent').innerHTML = content;
-      document.getElementById('modal').style.display = 'flex';
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overlay-open');
+
+      // Move focus into the modal for accessibility
+      const focusTarget = modal.querySelector('#modalContent [tabindex], #modalContent button, #modalContent a, #modalContent input, #modalContent select, #modalContent textarea');
+      if (focusTarget) focusTarget.focus();
+      else modal.querySelector('#modalContent').focus();
     }
 
     function closeModal() {
-      document.getElementById('modal').style.display = 'none';
+      const modal = document.getElementById('modal');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overlay-open');
     }
 
     // Date filter utilities
