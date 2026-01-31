@@ -1299,7 +1299,6 @@ async function deleteHotProduct(id) {
   }
 }
 
-// HOT PRODUCTS UPDATE
 async function updateHotProduct(productId, updateData) {
   try {
     const data = {};
