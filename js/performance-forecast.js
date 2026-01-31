@@ -1,0 +1,334 @@
+// ═══════════════════════════════════════════════════════════════
+// PERFORMANCE FORECAST - KAPRUKA CAMPAIGN PORTAL (DATA-DRIVEN)
+// ═══════════════════════════════════════════════════════════════
+
+// Objective descriptions
+const OBJECTIVE_INFO = {
+  CONVERSIONS: {
+    title: 'Conversions (Sales/Purchases)',
+    description: 'Optimize for product purchases and sales. Forecast based on your historical conversion campaigns.',
+    icon: '🛒'
+  },
+  LEAD_GENERATION: {
+    title: 'Lead Generation',
+    description: 'Collect customer information through forms. Forecast based on your historical lead generation campaigns.',
+    icon: '📝'
+  },
+  ENGAGEMENT: {
+    title: 'Engagement',
+    description: 'Maximize post interactions. Forecast based on your historical engagement campaigns.',
+    icon: '❤️'
+  },
+  REACH: {
+    title: 'Reach',
+    description: 'Show ads to maximum people. Forecast based on your historical reach campaigns.',
+    icon: '👥'
+  },
+  TRAFFIC: {
+    title: 'Traffic',
+    description: 'Drive website clicks. Forecast based on your historical traffic campaigns.',
+    icon: '🔗'
+  },
+  'APP_INSTALLS': {
+    title: 'App Installs',
+    description: 'Drive mobile app installations. Forecast based on your historical app install campaigns.',
+    icon: '📱'
+  },
+  'VIDEO_VIEWS': {
+    title: 'Video Views',
+    description: 'Maximize video views. Forecast based on your historical video campaigns.',
+    icon: '🎥'
+  },
+  'MESSAGES': {
+    title: 'Messages',
+    description: 'Generate conversations via Messenger. Forecast based on your historical messaging campaigns.',
+    icon: '💬'
+  }
+};
+
+// DOM Elements
+let objectiveSelect, budgetInput, budgetSlider, budgetDisplay, budgetAmount;
+let forecastBtn, resultsContainer, tableContainer, tableBody, objectiveInfo;
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Get DOM elements
+  objectiveSelect = document.getElementById('objective');
+  budgetInput = document.getElementById('budget');
+  budgetSlider = document.getElementById('budgetSlider');
+  budgetDisplay = document.getElementById('budgetDisplay');
+  budgetAmount = document.getElementById('budgetAmount');
+  forecastBtn = document.getElementById('forecastBtn');
+  resultsContainer = document.getElementById('resultsContainer');
+  tableContainer = document.getElementById('tableContainer');
+  tableBody = document.getElementById('tableBody');
+  objectiveInfo = document.getElementById('objectiveInfo');
+
+  // Event listeners
+  objectiveSelect.addEventListener('change', handleObjectiveChange);
+  budgetInput.addEventListener('input', handleBudgetChange);
+  budgetSlider.addEventListener('input', handleSliderChange);
+  forecastBtn.addEventListener('click', generateForecast);
+
+  // Sync initial values
+  syncBudgetValues();
+});
+
+// Handle objective selection change
+function handleObjectiveChange() {
+  const objective = objectiveSelect.value;
+  
+  if (objective && OBJECTIVE_INFO[objective]) {
+    const info = OBJECTIVE_INFO[objective];
+    objectiveInfo.innerHTML = `
+      <strong>${info.icon} ${info.title}</strong><br>
+      ${info.description}
+    `;
+    objectiveInfo.style.display = 'block';
+  } else {
+    objectiveInfo.style.display = 'none';
+  }
+
+  updateButtonState();
+}
+
+// Handle budget input change
+function handleBudgetChange() {
+  const value = parseFloat(budgetInput.value) || 0;
+  budgetSlider.value = value;
+  syncBudgetValues();
+  updateButtonState();
+}
+
+// Handle slider change
+function handleSliderChange() {
+  const value = parseFloat(budgetSlider.value);
+  budgetInput.value = value;
+  syncBudgetValues();
+  updateButtonState();
+}
+
+// Sync budget display
+function syncBudgetValues() {
+  const value = parseFloat(budgetInput.value) || 0;
+  budgetAmount.textContent = value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  
+  if (value > 0) {
+    budgetDisplay.style.display = 'flex';
+  } else {
+    budgetDisplay.style.display = 'none';
+  }
+}
+
+// Update button state
+function updateButtonState() {
+  const objective = objectiveSelect.value;
+  const budget = parseFloat(budgetInput.value) || 0;
+  
+  forecastBtn.disabled = !objective || budget < 10;
+}
+
+// Generate forecast using real historical data
+async function generateForecast() {
+  const objective = objectiveSelect.value;
+  const budget = parseFloat(budgetInput.value);
+
+  if (!objective || budget < 10) {
+    alert('Please select an objective and enter a budget of at least $10');
+    return;
+  }
+
+  // Show loading
+  resultsContainer.innerHTML = `
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <p>Analyzing historical campaign data...</p>
+    </div>
+  `;
+  tableContainer.style.display = 'none';
+  forecastBtn.disabled = true;
+
+  try {
+    // Call the forecast API with real data
+    const result = await getPerformanceForecast(objective, budget);
+    
+    if (!result.success) {
+      throw new Error('Failed to generate forecast');
+    }
+
+    // Display results
+    displayResults(result);
+
+  } catch (error) {
+    console.error('Forecast error:', error);
+    resultsContainer.innerHTML = `
+      <div class="error-message">
+        <strong>❌ Error generating forecast:</strong><br>
+        ${error.message || 'Unknown error occurred'}<br><br>
+        <small>This could mean there's no historical data for the selected objective. Please try a different objective or contact the admin.</small>
+      </div>
+    `;
+  } finally {
+    forecastBtn.disabled = false;
+  }
+}
+
+// Display forecast results based on real data
+function displayResults(data) {
+  const { objective, budget, historicalData, forecast } = data;
+  
+  // Build info banner about data source
+  let infoBanner = `
+    <div class="success-message" style="margin-bottom: 20px;">
+      <strong>📊 Forecast based on ${historicalData.recordCount.toLocaleString()} historical ad records</strong><br>
+      <small>Total historical spend analyzed: $${historicalData.totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}</small>
+    </div>
+  `;
+  
+  // Build results cards HTML
+  let resultsHTML = infoBanner + '<div class="results-grid">';
+  
+  // Primary metrics based on objective
+  if (objective === 'CONVERSIONS' || objective === 'LEAD_GENERATION') {
+    resultsHTML += `
+      <div class="result-card primary">
+        <div class="result-label">${objective === 'CONVERSIONS' ? 'Estimated Orders' : 'Estimated Leads'}</div>
+        <div class="result-value">${forecast.orders.toLocaleString()}</div>
+        <div class="result-unit">${objective === 'CONVERSIONS' ? 'purchases' : 'leads'}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Cost Per ${objective === 'CONVERSIONS' ? 'Order' : 'Lead'}</div>
+        <div class="result-value">$${forecast.costPerOrder.toFixed(2)}</div>
+        <div class="result-unit">average</div>
+      </div>
+    `;
+  }
+  
+  // Always show: Reach, Impressions, Clicks
+  resultsHTML += `
+    <div class="result-card ${objective === 'REACH' ? 'primary' : ''}">
+      <div class="result-label">Estimated Reach</div>
+      <div class="result-value">${forecast.reach.toLocaleString()}</div>
+      <div class="result-unit">unique people</div>
+    </div>
+    <div class="result-card">
+      <div class="result-label">Impressions</div>
+      <div class="result-value">${forecast.impressions.toLocaleString()}</div>
+      <div class="result-unit">ad views</div>
+    </div>
+    <div class="result-card ${objective === 'TRAFFIC' ? 'primary' : ''}">
+      <div class="result-label">Clicks</div>
+      <div class="result-value">${forecast.clicks.toLocaleString()}</div>
+      <div class="result-unit">link clicks</div>
+    </div>
+  `;
+  
+  // Show results for engagement/reach objectives
+  if (forecast.results > 0 && (objective === 'ENGAGEMENT' || objective === 'REACH')) {
+    resultsHTML += `
+      <div class="result-card primary">
+        <div class="result-label">Results</div>
+        <div class="result-value">${forecast.results.toLocaleString()}</div>
+        <div class="result-unit">total results</div>
+      </div>
+    `;
+  }
+  
+  resultsHTML += '</div>';
+  
+  resultsContainer.innerHTML = resultsHTML;
+  
+  // Build detailed table with historical averages
+  let tableHTML = `
+    <tr>
+      <td><strong>Input Budget</strong></td>
+      <td class="estimate-value">$${budget.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+      <td>-</td>
+    </tr>
+    <tr style="background: #f8f9fa;">
+      <td colspan="3"><strong>📊 Historical Averages (from ${historicalData.recordCount} records)</strong></td>
+    </tr>
+    <tr>
+      <td>Average CPC (Cost per Click)</td>
+      <td class="estimate-value">$${historicalData.avgCPC.toFixed(2)}</td>
+      <td>From real data</td>
+    </tr>
+    <tr>
+      <td>Average CPM (Cost per 1000 Impressions)</td>
+      <td class="estimate-value">$${historicalData.avgCPM.toFixed(2)}</td>
+      <td>From real data</td>
+    </tr>
+    <tr>
+      <td>Average CTR (Click-Through Rate)</td>
+      <td class="estimate-value">${historicalData.avgCTR.toFixed(2)}%</td>
+      <td>From real data</td>
+    </tr>
+  `;
+  
+  if (historicalData.avgConversionRate > 0) {
+    tableHTML += `
+      <tr>
+        <td>Average Conversion Rate</td>
+        <td class="estimate-value">${historicalData.avgConversionRate.toFixed(2)}%</td>
+        <td>From real data</td>
+      </tr>
+      <tr>
+        <td>Average Cost per Order</td>
+        <td class="estimate-value">$${historicalData.avgCostPerOrder.toFixed(2)}</td>
+        <td>From real data</td>
+      </tr>
+    `;
+  }
+  
+  tableHTML += `
+    <tr style="background: #f8f9fa;">
+      <td colspan="3"><strong>🎯 Forecasted Performance</strong></td>
+    </tr>
+    <tr>
+      <td>Estimated Reach</td>
+      <td class="estimate-value">${forecast.reach.toLocaleString()}</td>
+      <td>${Math.round(forecast.reach * 0.85).toLocaleString()} - ${Math.round(forecast.reach * 1.15).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td>Estimated Impressions</td>
+      <td class="estimate-value">${forecast.impressions.toLocaleString()}</td>
+      <td>${Math.round(forecast.impressions * 0.85).toLocaleString()} - ${Math.round(forecast.impressions * 1.15).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td>Estimated Clicks</td>
+      <td class="estimate-value">${forecast.clicks.toLocaleString()}</td>
+      <td>${Math.round(forecast.clicks * 0.80).toLocaleString()} - ${Math.round(forecast.clicks * 1.20).toLocaleString()}</td>
+    </tr>
+  `;
+  
+  if (forecast.orders > 0) {
+    tableHTML += `
+      <tr>
+        <td>Estimated ${objective === 'CONVERSIONS' ? 'Orders' : 'Leads'}</td>
+        <td class="estimate-value">${forecast.orders.toLocaleString()}</td>
+        <td>${Math.round(forecast.orders * 0.75).toLocaleString()} - ${Math.round(forecast.orders * 1.25).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td>Forecasted Cost per ${objective === 'CONVERSIONS' ? 'Order' : 'Lead'}</td>
+        <td class="estimate-value">$${forecast.costPerOrder.toFixed(2)}</td>
+        <td>$${(forecast.costPerOrder * 0.80).toFixed(2)} - $${(forecast.costPerOrder * 1.20).toFixed(2)}</td>
+      </tr>
+    `;
+  }
+  
+  if (forecast.results > 0) {
+    tableHTML += `
+      <tr>
+        <td>Estimated Results</td>
+        <td class="estimate-value">${forecast.results.toLocaleString()}</td>
+        <td>${Math.round(forecast.results * 0.80).toLocaleString()} - ${Math.round(forecast.results * 1.20).toLocaleString()}</td>
+      </tr>
+    `;
+  }
+  
+  tableBody.innerHTML = tableHTML;
+  tableContainer.style.display = 'block';
+}
