@@ -179,11 +179,16 @@ async function generateForecast() {
 // Fetch historical data and generate forecast
 async function getPerformanceForecast(objective, budget) {
   try {
+    // Check if supabase.js variables are available
+    if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
+      throw new Error('Supabase configuration not found. Make sure supabase.js is loaded before this script.');
+    }
+
     // Fetch historical data from meta_ads_performance table
     const historicalData = await fetchHistoricalData(objective);
 
     if (!historicalData || historicalData.length === 0) {
-      throw new Error(`No historical data found for objective: ${objective}`);
+      throw new Error(`No historical data found for objective: ${objective}. Please ensure you have campaign data in the database.`);
     }
 
     // Calculate averages from historical data
@@ -212,39 +217,49 @@ async function getPerformanceForecast(objective, budget) {
 // Fetch historical data from Supabase
 async function fetchHistoricalData(objective) {
   try {
-    // Map objectives to database objective names
+    // Map objectives to database objective names (common Meta Ads objective formats)
     const objectiveMapping = {
-      'CONVERSIONS': 'OUTCOME_SALES',
-      'LEAD_GENERATION': 'OUTCOME_LEADS',
-      'ENGAGEMENT': 'OUTCOME_ENGAGEMENT',
-      'REACH': 'OUTCOME_AWARENESS',
-      'TRAFFIC': 'OUTCOME_TRAFFIC',
-      'APP_INSTALLS': 'OUTCOME_APP_PROMOTION',
-      'VIDEO_VIEWS': 'OUTCOME_ENGAGEMENT',
-      'MESSAGES': 'OUTCOME_LEADS'
+      'CONVERSIONS': ['OUTCOME_SALES', 'CONVERSIONS', 'PURCHASE'],
+      'LEAD_GENERATION': ['OUTCOME_LEADS', 'LEAD_GENERATION', 'LEADS'],
+      'ENGAGEMENT': ['OUTCOME_ENGAGEMENT', 'ENGAGEMENT', 'POST_ENGAGEMENT'],
+      'REACH': ['OUTCOME_AWARENESS', 'REACH', 'BRAND_AWARENESS'],
+      'TRAFFIC': ['OUTCOME_TRAFFIC', 'LINK_CLICKS', 'TRAFFIC'],
+      'APP_INSTALLS': ['OUTCOME_APP_PROMOTION', 'APP_INSTALLS', 'MOBILE_APP_INSTALLS'],
+      'VIDEO_VIEWS': ['OUTCOME_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY'],
+      'MESSAGES': ['OUTCOME_LEADS', 'MESSAGES', 'MESSENGER_LEADS']
     };
 
-    const dbObjective = objectiveMapping[objective] || objective;
+    const possibleObjectives = objectiveMapping[objective] || [objective];
 
-    // Fetch from meta_ads_performance table
-    const url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?objective=eq.${encodeURIComponent(dbObjective)}&order=date.desc&limit=1000`;
+    // Try to fetch data for each possible objective name
+    let allData = [];
 
-    const response = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
+    for (const dbObjective of possibleObjectives) {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?objective=ilike.%${encodeURIComponent(dbObjective)}%&order=date.desc&limit=500`;
+
+        const response = await fetch(url, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+          }
+        }
+      } catch (err) {
+        console.log(`Could not fetch data for objective: ${dbObjective}`);
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-
-    // If no data with exact objective match, fetch all data
-    if (!data || data.length === 0) {
+    // If still no data, fetch all records and filter client-side
+    if (allData.length === 0) {
+      console.log('No objective-specific data found. Fetching all historical data...');
       const allUrl = `${SUPABASE_URL}/rest/v1/meta_ads_performance?order=date.desc&limit=1000`;
       const allResponse = await fetch(allUrl, {
         headers: {
@@ -255,13 +270,13 @@ async function fetchHistoricalData(objective) {
       });
 
       if (!allResponse.ok) {
-        throw new Error(`API Error: ${allResponse.status}`);
+        throw new Error(`API Error: ${allResponse.status} - ${allResponse.statusText}`);
       }
 
-      return await allResponse.json();
+      allData = await allResponse.json();
     }
 
-    return data;
+    return allData;
 
   } catch (error) {
     console.error('fetchHistoricalData error:', error);
@@ -284,16 +299,16 @@ function calculateHistoricalStats(data) {
     totalReach += parseInt(row.reach || 0);
     totalImpressions += parseInt(row.impression || 0);
     totalClicks += parseInt(row.clicks || 0);
-    totalOrders += parseInt(row.if_direct_orders || 0);
+    totalOrders += parseInt(row.if_direct_orders || row.direct_orders || 0);
     totalResults += parseInt(row.results || 0);
   });
 
-  // Calculate averages
-  const avgCPC = totalClicks > 0 ? totalSpent / totalClicks : 0.5;
-  const avgCPM = totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 5;
-  const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 1;
-  const avgConversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 2;
-  const avgCostPerOrder = totalOrders > 0 ? totalSpent / totalOrders : 20;
+  // Calculate averages with fallbacks
+  const avgCPC = totalClicks > 0 ? totalSpent / totalClicks : 0.50;
+  const avgCPM = totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 5.00;
+  const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 1.20;
+  const avgConversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 2.50;
+  const avgCostPerOrder = totalOrders > 0 ? totalSpent / totalOrders : 20.00;
   const avgReachPerDollar = totalSpent > 0 ? totalReach / totalSpent : 1000;
   const avgImpressionsPerDollar = totalSpent > 0 ? totalImpressions / totalSpent : 1500;
 
